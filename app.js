@@ -2,6 +2,9 @@ const el=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const source=(u,l)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+esc(l)+' ↗</a>';
 const fr=(n,d=1)=>n.toLocaleString('en-US',{maximumFractionDigits:d});
+// NBC official reference rate, KHR per USD
+const FX=4073,FXDATE='13 Nov 2026';
+const usd=m=>'$'+fr(m/FX/1e3,1)+' bn';
 const TYPE={Commercial:'Commercial',Specialized:'Specialized'};
 const metric=(b,m)=>b.fin.find(f=>f.metric.startsWith(m));
 const num=s=>s?parseFloat(s.replace(/,/g,'')):NaN;
@@ -24,7 +27,7 @@ const records=banks.flatMap(b=>b.events.map(e=>({...e,b}))).sort((a,b)=>b.date.l
 const withFin=banks.filter(b=>!isNaN(b.assets));
 const totAssets=withFin.reduce((s,b)=>s+b.assets,0),totLoans=withFin.reduce((s,b)=>s+(b.loans||0),0);
 const nplW=withFin.reduce((s,b)=>s+(b.loans&&!isNaN(b.npl)?b.loans*b.npl/100:0),0)/totLoans*100;
-el('stats').innerHTML=[[banks.length,'Bank profiles'],[banks.filter(b=>b.status!=='Licence withdrawn').length,'On August register'],[fr(totAssets/1e6,0)+' tn','Total assets (KHR)'],[fr(nplW)+'%','Sector weighted NPL'],[records.length,'Case-file entries']].map(([n,t])=>'<div class="kpi glass"><strong>'+n+'</strong><span>'+t+'</span></div>').join('');
+el('stats').innerHTML=[[banks.length,'Bank profiles'],[banks.filter(b=>b.status!=='Licence withdrawn').length,'On August register'],[fr(totAssets/1e6,0)+' tn','Total assets (KHR) · ≈ '+usd(totAssets)],[fr(nplW)+'%','Sector weighted NPL'],[records.length,'Case-file entries']].map(([n,t])=>'<div class="kpi glass"><strong>'+n+'</strong><span>'+t+'</span></div>').join('');
 
 /* ---------- Charts (vanilla SVG, no dependency) ---------- */
 const C={gold:'var(--gold)',jade:'var(--jade)',red:'var(--red)',blue:'var(--blue)'};
@@ -33,7 +36,7 @@ const tipAttr=(b,t)=>' data-tip="'+esc(t)+'"'+(b?' data-bank="'+id(b)+'"':'');
 const short=s=>s.length>22?s.slice(0,21)+'…':s;
 function barsH(target,items,fmt,color){const w=640,rh=26,lw=170,h=items.length*rh+4,max=Math.max(...items.map(i=>i.v));
  el(target).innerHTML=svg(w,h,items.map((i,k)=>{const y=k*rh,bw=(w-lw-60)*i.v/max;return '<text class="lbl" x="'+(lw-8)+'" y="'+(y+17)+'" text-anchor="end">'+esc(short(i.l))+'</text><rect class="bar" x="'+lw+'" y="'+(y+5)+'" width="'+bw+'" height="16" rx="6" fill="'+(i.c||color)+'"'+tipAttr(i.b,i.l+' · '+fmt(i.v))+'/><text x="'+(lw+bw+6)+'" y="'+(y+17)+'">'+fmt(i.v)+'</text>'}).join(''))}
-barsH('chAssets',withFin.slice().sort((a,b)=>b.assets-a.assets).slice(0,12).map((b,k)=>({l:b.display,v:b.assets/1e6,b,c:k<3?C.gold:C.jade})),v=>fr(v,1)+' tn');
+barsH('chAssets',withFin.slice().sort((a,b)=>b.assets-a.assets).slice(0,12).map((b,k)=>({l:b.display,v:b.assets/1e6,b,c:k<3?C.gold:C.jade})),v=>fr(v,1)+' tn · '+usd(v*1e6));
 // Origin donut
 (()=>{const o=banks.filter(b=>!isNaN(b.local)),loc=o.reduce((s,b)=>s+b.local,0)/o.length,R=70,L=2*Math.PI*R,d=L*loc/100;
  el('chOrigin').innerHTML=svg(240,200,'<g transform="translate(120,100) rotate(-90)"><circle r="'+R+'" fill="none" stroke="var(--blue)" stroke-width="26"'+tipAttr(0,'Foreign · '+fr(100-loc)+'%')+' class="bar"/><circle r="'+R+'" fill="none" stroke="var(--gold)" stroke-width="26" stroke-dasharray="'+d+' '+L+'"'+tipAttr(0,'Cambodian · '+fr(loc)+'%')+' class="bar"/></g><text x="120" y="98" text-anchor="middle" class="lbl" style="font:600 26px Fraunces,serif">'+fr(100-loc,0)+'%</text><text x="120" y="118" text-anchor="middle">foreign capital</text>')+'<div class="legend"><span><i style="background:var(--gold)"></i>Cambodian</span><span><i style="background:var(--blue)"></i>Foreign</span><span>'+o.length+' banks</span></div>'})();
@@ -68,14 +71,14 @@ function render(){
   if(s==='low'||s==='high'){const x=a.npl,y=b.npl;v=isNaN(x)||isNaN(y)?Number(isNaN(x))-Number(isNaN(y)):(s==='low'?x-y:y-x)}
   return v||a.display.localeCompare(b.display)});
  el('count').textContent=set.length?Math.min(limit,set.length)+' of '+set.length+' banks':'No matching banks. Try another name or filter.';
- el('rows').innerHTML=set.slice(0,limit).map(b=>{const [sc,lab]=integrity(b);return '<button class="bank glass" data-bank="'+id(b)+'"><span class="who"><span class="mon">'+esc(initial(b))+'</span><span><b>'+esc(b.display)+'</b><em>'+TYPE[b.type]+(isNaN(b.assets)?'':' · '+fr(b.assets/1e6)+' tn KHR')+'</em></span></span><span class="owner">'+esc(b.ownership?.owner||'Shareholders unverified')+'</span>'+meter(b)+'<span class="foot"><span>'+(b.status==='Licence withdrawn'?'Licence withdrawn':isNaN(b.npl)?'NPL unavailable':'NPL '+fr(b.npl)+'% · peers '+fr(b.peer)+'%')+'</span><span class="tag '+tagCls(sc)+'">'+lab+'</span></span></button>'}).join('');
+ el('rows').innerHTML=set.slice(0,limit).map(b=>{const [sc,lab]=integrity(b);return '<button class="bank glass" data-bank="'+id(b)+'"><span class="who"><span class="mon">'+esc(initial(b))+'</span><span><b>'+esc(b.display)+'</b><em>'+TYPE[b.type]+(isNaN(b.assets)?'':' · '+fr(b.assets/1e6)+' tn KHR · '+usd(b.assets))+'</em></span></span><span class="owner">'+esc(b.ownership?.owner||'Shareholders unverified')+'</span>'+meter(b)+'<span class="foot"><span>'+(b.status==='Licence withdrawn'?'Licence withdrawn':isNaN(b.npl)?'NPL unavailable':'NPL '+fr(b.npl)+'% · peers '+fr(b.peer)+'%')+'</span><span class="tag '+tagCls(sc)+'">'+lab+'</span></span></button>'}).join('');
  el('more').hidden=set.length<=limit;
 }
 function openBank(i){
  const b=banks[i],o=b.ownership,v=b.npl,p=b.peer,[sc,lab]=integrity(b);
- const mini=[[isNaN(v)?'—':fr(v)+'%','NPL 2025 (peers '+fr(p)+'%)'],[isNaN(b.prev)?'—':fr(b.prev)+'%','NPL 2024'],[isNaN(b.eq)?'—':fr(b.eq)+'%','Equity / assets'],[isNaN(b.assets)?'—':fr(b.assets/1e6)+' tn','Assets (KHR)'],[isNaN(b.loans)?'—':fr(b.loans/1e6)+' tn','Loans (KHR)']];
+ const mini=[[isNaN(v)?'—':fr(v)+'%','NPL 2025 (peers '+fr(p)+'%)'],[isNaN(b.prev)?'—':fr(b.prev)+'%','NPL 2024'],[isNaN(b.eq)?'—':fr(b.eq)+'%','Equity / assets'],[isNaN(b.assets)?'—':fr(b.assets/1e6)+' tn','Assets (KHR) · ≈ '+usd(b.assets)],[isNaN(b.loans)?'—':fr(b.loans/1e6)+' tn','Loans (KHR) · ≈ '+usd(b.loans)]];
  el('body').innerHTML='<span class="eyebrow">'+TYPE[b.type]+' bank</span><h2>'+esc(b.display)+'</h2><p>'+esc(b.name)+' · <b>'+esc(b.status)+'</b> · '+source(b.statusSource||b.source,'Source')+'</p><p><span class="tag '+tagCls(sc)+'">'+lab+'</span> <span class="tag '+(isNaN(v)?'':v>p?'warn':'')+'">'+(isNaN(v)?'Assessment unavailable':v>p?'NPL above peers':'NPL at or below peers')+'</span></p>'
- +'<h3>Key indicators</h3><p class="note">Individual reported indicators, not a safety rating.</p><div class="mini">'+mini.map(([a,c])=>'<div><strong>'+a+'</strong><span>'+c+'</span></div>').join('')+'</div>'+(isNaN(v)?'':'<p style="margin-top:14px">'+meter(b)+'</p>')
+ +'<h3>Key indicators</h3><p class="note">Individual reported indicators, not a safety rating.</p><div class="mini">'+mini.map(([a,c])=>'<div><strong>'+a+'</strong><span>'+c+'</span></div>').join('')+'</div><p class="note">USD at NBC official rate KHR '+fr(FX,0)+' per USD ('+FXDATE+'). Balances are as of 31 Dec 2025.</p>'+(isNaN(v)?'':'<p style="margin-top:14px">'+meter(b)+'</p>')
  +'<h3>Ownership and control</h3><b>'+esc(o?.owner||'Shareholders unverified')+'</b><p>'+esc(o?.detail||b.context?.detail||'A reliable shareholder breakdown was unavailable in the reviewed material.')+'</p>'+((o||b.context)?source((o||b.context).url,'Ownership source'):'')
  +'<h3>Financial sources</h3>'+b.fin.map(f=>'<p><b>'+esc(f.value)+' · '+esc(f.metric)+'</b><br>'+esc(f.asof)+' · '+esc(f.detail)+' '+source(f.url,'Table')+'</p>').join('')+(!b.fin.length?'<p>No comparable bank-level data in this edition.</p>':'')
  +'<h3>Regulatory and integrity record</h3><p class="note">The label above names the most significant documented event only. It is not an overall judgment of the bank. Each entry states who it concerns.</p>'+b.events.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>'<article><span class="eyebrow">'+esc(scope(e))+' · '+esc(e.kind)+' · '+esc(e.date)+'</span><h4>'+esc(e.title)+'</h4><p><b>'+esc(e.subject)+'</b> — '+esc(e.detail)+'</p>'+source(e.url,'Read the source')+'</article>').join('')+(!b.events.length?'<p>No event indexed. Shareholder screening is incomplete.</p>':'');
