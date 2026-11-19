@@ -1,5 +1,5 @@
 # Srok Riel
 
-Qui possède les banques du Cambodge ? Registre, indicateurs NBC et dossiers réglementaires.
+Who owns Cambodia’s banks? Bank register, NBC indicators and regulatory case files.
 
-Site : https://hanumanykh.github.io/srok-riel/
+Site: https://hanumanykh.github.io/srok-riel/
