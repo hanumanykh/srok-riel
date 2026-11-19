@@ -141,3 +141,23 @@ el('coverage').innerHTML=[[banks.length,'profiles in total'],[banks.filter(b=>!i
 
 // 3D tilt on cards (pointer devices)
 if(matchMedia('(hover:hover)').matches&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.addEventListener('pointermove',e=>{const c=e.target.closest?.('.bank,.kpi');document.querySelectorAll('.tilt').forEach(n=>{if(n!==c){n.classList.remove('tilt');n.style.transform=''}});if(!c)return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.classList.add('tilt');c.style.transform='perspective(900px) rotateX('+(-y*6)+'deg) rotateY('+(x*7)+'deg) translateY(-3px)'});
+
+/* ---------- 2030 jump ---------- */
+(()=>{const R=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// scroll progress + cursor light
+document.body.insertAdjacentHTML('afterbegin','<div id="prog"></div><div id="cur" aria-hidden="true"></div><div class="orbs" aria-hidden="true"><i></i><i></i><i></i></div>');
+addEventListener('scroll',()=>{el('prog').style.transform='scaleX('+(scrollY/(document.documentElement.scrollHeight-innerHeight))+')'},{passive:true});
+if(!R&&matchMedia('(hover:hover)').matches)addEventListener('pointermove',e=>{el('cur').style.transform='translate('+e.clientX+'px,'+e.clientY+'px)'});
+// kinetic headline
+const h1=document.querySelector('h1');if(h1&&!R){let i=0;h1.querySelectorAll('br').forEach(b=>b.replaceWith('\n'));const html=h1.innerHTML;h1.innerHTML=html.split(/(<em>.*?<\/em>|\n)/).map(p=>p==='\n'?'<br>':p.startsWith('<em>')?'<em>'+p.slice(4,-5).split(' ').map(w=>'<span class="w" style="--i:'+(i++)+'">'+w+'</span>').join(' ')+'</em>':p.split(' ').filter(Boolean).map(w=>'<span class="w" style="--i:'+(i++)+'">'+w+'</span>').join(' ')).join('')}
+// live ticker
+const tk=banks.filter(b=>b.profit!==undefined).sort((a,b)=>Math.abs(b.profit)-Math.abs(a.profit)).slice(0,16).map(b=>'<span><b>'+esc(b.display.replace(/\s*\(.*?\)|,? (Plc|Ltd).*$/g,''))+'</b> <em class="'+(b.profit<0?'dn':'up')+'">'+(b.profit<0?'▼ −':'▲ ')+fr(Math.abs(b.profit)/1e3,1)+' bn</em></span>').join('');
+document.querySelector('.hero').insertAdjacentHTML('afterend','<div class="ticker" aria-label="FY2025 net profit by bank"><div>'+tk+tk+'</div></div>');
+// command palette
+document.body.insertAdjacentHTML('beforeend','<div id="cmd" hidden><div class="cmdbox glass"><input id="cmdq" placeholder="Jump to a bank…  (Esc to close)" aria-label="Jump to a bank"><div id="cmdr"></div></div></div><button id="cmdbtn" class="btn" aria-label="Open quick search">⌘K</button>');
+const open=()=>{el('cmd').hidden=false;el('cmdq').value='';draw();el('cmdq').focus()},close=()=>el('cmd').hidden=true;let sel=0,hits=[];
+const draw=()=>{const q=el('cmdq').value.toLowerCase();hits=banks.filter(b=>!q||(b.display+' '+(b.ownership?.owner||'')).toLowerCase().includes(q)).slice(0,8);sel=0;paint()};
+const paint=()=>el('cmdr').innerHTML=hits.map((b,i)=>'<button class="ci'+(i===sel?' on':'')+'" data-bank="'+id(b)+'"><span class="mon">'+esc(initial(b))+logo(b)+'</span><span><b>'+esc(b.display)+'</b><em>'+TYPE[b.type]+(b.profit!==undefined?' · net '+(b.profit<0?'−':'')+fr(Math.abs(b.profit)/1e3,1)+' bn':'')+'</em></span></button>').join('')||'<p class="note">No match</p>';
+el('cmdq').oninput=draw;el('cmdbtn').onclick=open;el('cmd').onclick=e=>{if(e.target.id==='cmd'||e.target.closest('[data-bank]'))close()};
+addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();el('cmd').hidden?open():close()}else if(!el('cmd').hidden){if(e.key==='Escape')close();if(e.key==='ArrowDown'){sel=Math.min(sel+1,hits.length-1);paint()}if(e.key==='ArrowUp'){sel=Math.max(sel-1,0);paint()}if(e.key==='Enter'&&hits[sel]){close();openBank(id(hits[sel]))}}});
+})();
