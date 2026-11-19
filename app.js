@@ -76,20 +76,23 @@ const tip=el('tip');document.addEventListener('pointermove',e=>{const t=e.target
 
 /* ---------- Directory ---------- */
 const meter=b=>isNaN(b.npl)?'':'<div class="meter" title="NPL vs peers"><i style="width:'+Math.min(100,b.npl/30*100)+'%;background:'+(b.npl>b.peer?C.red:C.jade)+'"></i><b style="left:'+(b.peer/30*100)+'%"></b></div>';
-let limit=12;
+let limit=12,VIEW=matchMedia('(min-width:900px)').matches?'table':'cards';
+const COLS=[['name','Bank'],['type','Type'],['owner','Disclosed owner'],['fx','Foreign capital'],['assets','Assets (KHR tn)'],['profit','Net profit 2025 (KHR bn)'],['roa','ROA'],['npl','NPL ratio'],['rec','Record']];
+const table=set=>{const s=el('sort').value;return '<table class="bt"><thead><tr>'+COLS.map(([k,l])=>'<th><button data-col="'+k+'" aria-sort="'+(s==='t:'+k?'ascending':s==='t:-'+k?'descending':'none')+'">'+l+(s==='t:'+k?' ▲':s==='t:-'+k?' ▼':'')+'</button></th>').join('')+'</tr></thead><tbody>'+set.map(b=>{const [sc,lab]=integrity(b),n=(v,d,suf)=>v===undefined||isNaN(v)?'<span class="na">—</span>':fr(v,d)+(suf||'');return '<tr data-bank="'+id(b)+'" tabindex="0"><td class="nm"><span class="mon sm">'+esc(initial(b))+logo(b)+'</span><b>'+esc(short(b.display))+'</b></td><td>'+TYPE[b.type]+'</td><td class="ow">'+esc(b.ownership?.owner||'—')+'</td><td>'+(isNaN(b.local)?'<span class="na">—</span>':'<span class="cap"><i style="width:'+(100-b.local)+'%"></i></span>'+fr(100-b.local,0)+'%')+'</td><td class="r">'+n(b.assets/1e6,1)+'</td><td class="r '+(b.profit<0?'neg':'')+'">'+(b.profit===undefined?'<span class="na">—</span>':(b.profit<0?'−':'')+fr(Math.abs(b.profit)/1e3,1))+'</td><td class="r">'+n(b.roa,2,'%')+'</td><td class="r '+(b.npl>b.peer?'neg':'')+'">'+n(b.npl,1,'%')+'</td><td><span class="tag '+tagCls(sc)+'">'+lab+'</span></td></tr>'}).join('')+'</tbody></table>'};
 const chips=[['','All'],['cases','With case files'],['revoked','Licence withdrawn'],['owner','Ownership sourced']];
 el('chips').innerHTML=chips.map(([v,l])=>'<button class="chip" data-chip="'+v+'" aria-pressed="'+(v==='')+'">'+l+'</button>').join('');
 el('chips').onclick=e=>{const c=e.target.closest('[data-chip]');if(!c)return;el('risk').value=c.dataset.chip;limit=12;render()};
 function render(){
  const q=el('search').value.toLowerCase().trim(),t=el('type').value,r=el('risk').value,s=el('sort').value;
  document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.chip===r));
- const set=banks.filter(b=>(!t||b.type===t)&&(!q||[b.name,b.display,b.ownership?.owner,b.ownership?.detail].join(' ').toLowerCase().includes(q))&&(!r||({cases:b.events.length,owner:!!b.ownership,revoked:b.status==='Licence withdrawn',fin:b.fin.length}[r]))).sort((a,b)=>{
+ const o=el('own').value;const set=banks.filter(b=>(!o||(o==='kh'?b.local>50:o==='fx'?b.local<50:o==='mix'?b.local===50:isNaN(b.local)))&&(!t||b.type===t)&&(!q||[b.name,b.display,b.ownership?.owner,b.ownership?.detail].join(' ').toLowerCase().includes(q))&&(!r||({cases:b.events.length,owner:!!b.ownership,revoked:b.status==='Licence withdrawn',fin:b.fin.length}[r]))).sort((a,b)=>{
   let v=0;if(s==='integrity')v=integrity(b)[0]-integrity(a)[0];
   if(s==='assets')v=(b.assets||0)-(a.assets||0);
   if(s==='low'||s==='high'){const x=a.npl,y=b.npl;v=isNaN(x)||isNaN(y)?Number(isNaN(x))-Number(isNaN(y)):(s==='low'?x-y:y-x)}
+  if(s.startsWith('t:')){const k=s.slice(2),dir=k[0]==='-'?-1:1,f=k.replace('-',''),g=b=>({name:b.display.toLowerCase(),type:b.type,owner:(b.ownership?.owner||'~').toLowerCase(),fx:100-b.local,assets:b.assets,profit:b.profit,roa:b.roa,npl:b.npl,rec:integrity(b)[0]}[f]);const x=g(a),y=g(b),nx=x===undefined||(typeof x==='number'&&isNaN(x)),ny=y===undefined||(typeof y==='number'&&isNaN(y));v=nx||ny?nx-ny:(x<y?-1:x>y?1:0)*dir}
   return v||a.display.localeCompare(b.display)});
  el('count').textContent=set.length?Math.min(limit,set.length)+' of '+set.length+' banks':'No matching banks. Try another name or filter.';
- el('rows').innerHTML=set.slice(0,limit).map(b=>{const [sc,lab]=integrity(b);return '<button class="bank glass" data-bank="'+id(b)+'"><span class="who"><span class="mon">'+esc(initial(b))+logo(b)+'</span><span><b>'+esc(b.display)+'</b><em>'+TYPE[b.type]+(isNaN(b.assets)?'':' · '+fr(b.assets/1e6)+' tn KHR · '+usd(b.assets))+'</em></span></span><span class="foot"><span class="tag '+tagCls(sc)+'">'+lab+'</span><span class="open">View profile →</span></span></button>'}).join('');
+ if(VIEW==='table'){el('count').textContent=set.length+' banks';el('rows').className='tablewrap';el('rows').innerHTML=table(set);el('more').hidden=true;return}el('rows').className='rows';el('rows').innerHTML=set.slice(0,limit).map(b=>{const [sc,lab]=integrity(b);return '<button class="bank glass" data-bank="'+id(b)+'"><span class="who"><span class="mon">'+esc(initial(b))+logo(b)+'</span><span><b>'+esc(b.display)+'</b><em>'+TYPE[b.type]+(isNaN(b.assets)?'':' · '+fr(b.assets/1e6)+' tn KHR · '+usd(b.assets))+'</em></span></span><span class="foot"><span class="tag '+tagCls(sc)+'">'+lab+'</span><span class="open">View profile →</span></span></button>'}).join('');
  el('more').hidden=set.length<=limit;
 }
 function openBank(i){
@@ -106,7 +109,7 @@ let caseLimit=6;
 function renderCases(){el('cases').innerHTML=records.slice(0,caseLimit).map(e=>'<button class="case glass" data-bank="'+id(e.b)+'"><time>'+esc(e.date)+' · '+esc(e.kind)+'</time><strong>'+esc(e.title)+'</strong><span>'+esc(e.b.display)+'</span></button>').join('');el('caseMore').hidden=caseLimit>=records.length}
 el('cases').insertAdjacentHTML('afterend','<button id="caseMore" class="btn wide">Show more case files</button>');
 el('caseMore').onclick=()=>{caseLimit+=9;renderCases()};
-for(const c of ['type','risk','sort','search'])el(c).addEventListener('input',()=>{limit=12;render()});
+for(const c of ['type','risk','sort','search','own'])el(c).addEventListener('input',()=>{limit=12;render()});
 el('more').onclick=()=>{limit+=15;render()};
 document.addEventListener('click',e=>{const t=e.target.closest('[data-bank]');if(t)openBank(+t.dataset.bank)});
 el('close').onclick=()=>el('profile').close();
@@ -158,3 +161,10 @@ const paint=()=>el('cmdr').innerHTML=hits.map((b,i)=>'<button class="ci'+(i===se
 el('cmdq').oninput=draw;el('cmdbtn').onclick=open;el('cmd').onclick=e=>{if(e.target.id==='cmd'||e.target.closest('[data-bank]'))close()};
 addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();el('cmd').hidden?open():close()}else if(!el('cmd').hidden){if(e.key==='Escape')close();if(e.key==='ArrowDown'){sel=Math.min(sel+1,hits.length-1);paint()}if(e.key==='ArrowUp'){sel=Math.max(sel-1,0);paint()}if(e.key==='Enter'&&hits[sel]){close();openBank(id(hits[sel]))}}});
 })();
+
+// view toggle + column sorting
+el('viewToggle').onclick=e=>{const t=e.target.closest('[data-v]');if(!t)return;VIEW=t.dataset.v;el('viewToggle').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===t));render()};
+el('viewToggle').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===VIEW));
+el('rows').addEventListener('click',e=>{const c=e.target.closest('[data-col]');if(!c)return;e.stopPropagation();const s=el('sort'),k=c.dataset.col,cur=s.value;let o=[...s.options].find(x=>x.value.startsWith('t:'));if(!o){o=new Option('','');s.add(o)}o.value=cur==='t:'+k?'t:-'+k:'t:'+k;o.text='Table: '+c.textContent.replace(/[▲▼]/g,'').trim();s.value=o.value;render()},true);
+el('rows').addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-bank]');if(r)openBank(+r.dataset.bank)}});
+render();

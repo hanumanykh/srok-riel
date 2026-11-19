@@ -142,3 +142,20 @@ h2{line-height:1.15}section{padding-top:56px}
 .kpi{min-height:0}.kpi span{display:block;line-height:1.35}
 .mon img[src*="google.com"]{background:transparent;padding:9px}
 .tabbar{display:grid!important;grid-template-columns:repeat(5,1fr)}@media(min-width:761px){.tabbar{display:none!important}}
+/* table view */
+.tools{grid-template-columns:2fr repeat(4,1fr)}
+.dirbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 4px}.dirbar .chips{margin:0}
+.tablewrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--line);background:var(--glass)}
+.bt{width:100%;border-collapse:collapse;font-size:15px;min-width:1050px}
+.bt th{position:sticky;top:0;background:color-mix(in srgb,var(--bg) 92%,transparent);text-align:left;z-index:1}
+.bt th button{all:unset;cursor:pointer;display:block;padding:14px 12px;font-size:13px;font-weight:600;color:var(--mute);white-space:nowrap}.bt th button:hover,.bt th button[aria-sort=ascending],.bt th button[aria-sort=descending]{color:var(--gold)}
+.bt td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle}
+.bt tbody tr{cursor:pointer}.bt tbody tr:hover,.bt tbody tr:focus{background:var(--glass2);outline:none}
+.bt .nm{display:flex;align-items:center;gap:10px;min-width:220px}.bt .nm b{font-weight:600}
+.mon.sm{width:52px!important;height:32px;border-radius:9px;font-size:12px;flex:none}
+.bt .ow{color:var(--mute);max-width:240px;font-size:14px}
+.bt .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.bt .neg{color:var(--red)}.na{color:var(--mute);opacity:.6}
+.cap{display:inline-block;width:46px;height:6px;border-radius:6px;background:var(--gold);margin-right:8px;vertical-align:middle;overflow:hidden;opacity:.85}.cap i{display:block;height:100%;background:var(--blue)}
+.bt td:nth-child(4){white-space:nowrap}
+.bt td:first-child{position:sticky;left:0;background:color-mix(in srgb,var(--bg) 94%,transparent)}
+@media(max-width:900px){.tools{grid-template-columns:1fr 1fr}.bt{font-size:14px}}
