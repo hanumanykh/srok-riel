@@ -120,3 +120,18 @@ h1 em{display:inline}h1 em .w{background:linear-gradient(90deg,var(--gold),var(-
 .card,.kpi,.bank{border-image:none}.kpi{background:linear-gradient(145deg,var(--glass2),var(--glass))}
 @media(max-width:760px){#cmdbtn{display:none}.orbs i{filter:blur(50px)}}
 @media(prefers-reduced-motion:reduce){.ticker{overflow-x:auto;scrollbar-width:none;-webkit-mask:none}.ticker>div{animation:none;padding:11px 20px}.ticker span:nth-child(n+17){display:none}.orbs i{animation:none}}
+/* readability pass */
+:root{--mute:#c3d6cf;--line:rgba(255,255,255,.16);--glass:rgba(12,40,35,.72);--glass2:rgba(255,255,255,.1)}
+[data-theme=light]{--mute:#3b564f;--glass:rgba(255,255,255,.88);--line:rgba(13,42,37,.16)}
+body{font-size:17px;line-height:1.65}
+body::before,#cur,.aurora::after{display:none}
+.orbs i{opacity:.16}[data-theme=light] .orbs i{opacity:.08}
+.card p,.lead,.note,#body p{font-size:16px;line-height:1.7}
+.lead{font-size:18px}
+figcaption b{font-size:18px}figcaption span{font-size:14px}
+.chart text{font-size:13px}.chart .lbl{font-size:13.5px;font-weight:500}
+.who b{font-size:16.5px}.owner{font-size:15px}.foot{font-size:14px}.tag{font-size:13px}
+.kpi span{font-size:14.5px}.kpi strong{font-size:30px}
+.glass::after{display:none}
+h2{line-height:1.15}section{padding-top:56px}
+.case span,.case strong{font-size:16px}

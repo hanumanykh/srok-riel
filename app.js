@@ -147,12 +147,9 @@ if(matchMedia('(hover:hover)').matches&&!matchMedia('(prefers-reduced-motion: re
 // scroll progress + cursor light
 document.body.insertAdjacentHTML('afterbegin','<div id="prog"></div><div id="cur" aria-hidden="true"></div><div class="orbs" aria-hidden="true"><i></i><i></i><i></i></div>');
 addEventListener('scroll',()=>{el('prog').style.transform='scaleX('+(scrollY/(document.documentElement.scrollHeight-innerHeight))+')'},{passive:true});
-if(!R&&matchMedia('(hover:hover)').matches)addEventListener('pointermove',e=>{el('cur').style.transform='translate('+e.clientX+'px,'+e.clientY+'px)'});
+
 // kinetic headline
 const h1=document.querySelector('h1');if(h1&&!R){let i=0;h1.querySelectorAll('br').forEach(b=>b.replaceWith('\n'));const html=h1.innerHTML;h1.innerHTML=html.split(/(<em>.*?<\/em>|\n)/).map(p=>p==='\n'?'<br>':p.startsWith('<em>')?'<em>'+p.slice(4,-5).split(' ').map(w=>'<span class="w" style="--i:'+(i++)+'">'+w+'</span>').join(' ')+'</em>':p.split(' ').filter(Boolean).map(w=>'<span class="w" style="--i:'+(i++)+'">'+w+'</span>').join(' ')).join('')}
-// live ticker
-const tk=banks.filter(b=>b.profit!==undefined).sort((a,b)=>Math.abs(b.profit)-Math.abs(a.profit)).slice(0,16).map(b=>'<span><b>'+esc(b.display.replace(/\s*\(.*?\)|,? (Plc|Ltd).*$/g,''))+'</b> <em class="'+(b.profit<0?'dn':'up')+'">'+(b.profit<0?'▼ −':'▲ ')+fr(Math.abs(b.profit)/1e3,1)+' bn</em></span>').join('');
-document.querySelector('.hero').insertAdjacentHTML('afterend','<div class="ticker" aria-label="FY2025 net profit by bank"><div>'+tk+tk+'</div></div>');
 // command palette
 document.body.insertAdjacentHTML('beforeend','<div id="cmd" hidden><div class="cmdbox glass"><input id="cmdq" placeholder="Jump to a bank…  (Esc to close)" aria-label="Jump to a bank"><div id="cmdr"></div></div></div><button id="cmdbtn" class="btn" aria-label="Open quick search">⌘K</button>');
 const open=()=>{el('cmd').hidden=false;el('cmdq').value='';draw();el('cmdq').focus()},close=()=>el('cmd').hidden=true;let sel=0,hits=[];
