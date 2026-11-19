@@ -159,3 +159,6 @@ h2{line-height:1.15}section{padding-top:56px}
 .bt td:nth-child(4){white-space:nowrap}
 .bt td:first-child{position:sticky;left:0;background:color-mix(in srgb,var(--bg) 94%,transparent)}
 @media(max-width:900px){.tools{grid-template-columns:1fr 1fr}.bt{font-size:14px}}
+.bt .nm{display:table-cell;white-space:nowrap}.bt .nm .mon.sm{display:inline-grid;vertical-align:middle;margin-right:10px}
+.bt .ow{max-width:230px;overflow:hidden;display:table-cell}.bt .ow{white-space:nowrap;text-overflow:ellipsis}
+.bt td:last-child .tag{white-space:nowrap}.bt td{padding:9px 12px}.bt{min-width:1180px}
