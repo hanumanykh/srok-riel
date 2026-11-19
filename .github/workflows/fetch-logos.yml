@@ -1,0 +1,32 @@
+name: Fetch bank logos
+on:
+  push:
+    paths: [logos/sources.tsv, .github/workflows/fetch-logos.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download logos
+        run: |
+          cd logos
+          : > report.txt
+          while IFS=$'\t' read -r dom url; do
+            ext=$(echo "$url" | sed -E 's/[?#].*//; s/.*\.([a-zA-Z0-9]{3,4})$/\1/' | tr A-Z a-z)
+            case "$ext" in png|jpg|jpeg|svg|webp|gif) ;; *) ext=png;; esac
+            f="$dom.$ext"
+            code=$(curl -sSL -m 30 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -H "Referer: https://$dom/" -o "$f" -w "%{http_code}" "$url" || echo ERR)
+            type=$(file -b --mime-type "$f" 2>/dev/null || echo none)
+            if [ "$code" != "200" ] || ! echo "$type" | grep -qE 'image/|text/xml|svg'; then rm -f "$f"; echo "FAIL $dom $code $type" >> report.txt; else echo "OK $f $(stat -c%s "$f") $type" >> report.txt; fi
+          done < sources.tsv
+          cat report.txt
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add logos
+          git commit -m "Store bank logos in repo" || echo "nothing to commit"
+          git push
