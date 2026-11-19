@@ -73,7 +73,7 @@ function render(){
 function openBank(i){
  const b=banks[i],o=b.ownership,v=b.npl,p=b.peer,[sc,lab]=integrity(b);
  const mini=[[isNaN(v)?'—':fr(v)+'%','NPL 2025 (peers '+fr(p)+'%)'],[isNaN(b.prev)?'—':fr(b.prev)+'%','NPL 2024'],[isNaN(b.eq)?'—':fr(b.eq)+'%','Equity / assets'],[isNaN(b.assets)?'—':fr(b.assets/1e6)+' bn','Assets (KHR)'],[isNaN(b.loans)?'—':fr(b.loans/1e6)+' bn','Loans (KHR)']];
- el('body').innerHTML='<span class="eyebrow">Banque '+TYPE[b.type].toLowerCase()+'</span><h2>'+esc(b.display)+'</h2><p>'+esc(b.name)+' · <b>'+esc(b.status)+'</b> · '+source(b.statusSource||b.source,'Source')+'</p><p><span class="tag '+tagCls(sc)+'">'+lab+'</span> <span class="tag '+(isNaN(v)?'':v>p?'warn':'')+'">'+(isNaN(v)?'Assessment unavailable':v>p?'Above peers':'At or below peers')+'</span></p>'
+ el('body').innerHTML='<span class="eyebrow">'+TYPE[b.type]+' bank</span><h2>'+esc(b.display)+'</h2><p>'+esc(b.name)+' · <b>'+esc(b.status)+'</b> · '+source(b.statusSource||b.source,'Source')+'</p><p><span class="tag '+tagCls(sc)+'">'+lab+'</span> <span class="tag '+(isNaN(v)?'':v>p?'warn':'')+'">'+(isNaN(v)?'Assessment unavailable':v>p?'Above peers':'At or below peers')+'</span></p>'
  +'<h3>Key indicators</h3><div class="mini">'+mini.map(([a,c])=>'<div><strong>'+a+'</strong><span>'+c+'</span></div>').join('')+'</div>'+(isNaN(v)?'':'<p style="margin-top:14px">'+meter(b)+'</p>')
  +'<h3>Ownership and control</h3><b>'+esc(o?.owner||'Shareholders unverified')+'</b><p>'+esc(o?.detail||b.context?.detail||'A reliable shareholder breakdown was unavailable in the reviewed material.')+'</p>'+((o||b.context)?source((o||b.context).url,'Ownership source'):'')
  +'<h3>Financial sources</h3>'+b.fin.map(f=>'<p><b>'+esc(f.value)+' · '+esc(f.metric)+'</b><br>'+esc(f.asof)+' · '+esc(f.detail)+' '+source(f.url,'Table')+'</p>').join('')+(!b.fin.length?'<p>No comparable bank-level data in this edition.</p>':'')
@@ -96,3 +96,21 @@ const root=document.documentElement;try{root.dataset.theme=localStorage.getItem(
 el('theme').onclick=()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('theme',root.dataset.theme)}catch{}};
 render();renderCases();
 const deep=location.hash.match(/^#bank-(\d+)/);if(deep&&banks[deep[1]])openBank(+deep[1]);
+
+/* ---------- v2: mobile tab bar, reveal, counters, bottom sheet ---------- */
+document.body.insertAdjacentHTML('beforeend','<nav class="tabbar glass" aria-label="Sections">'+[['top','⌂','Home'],['insights','◔','Insights'],['directory','☰','Banks'],['records','⚑','Cases'],['method','ⓘ','About']].map(([h,i,l])=>'<a href="#'+h+'" data-sec="'+h+'"><span aria-hidden="true">'+i+'</span>'+l+'</a>').join('')+'</nav><button class="fab" id="fab" aria-label="Search banks">⌕</button>');
+el('fab').onclick=()=>{el('directory').scrollIntoView({behavior:'smooth'});setTimeout(()=>el('search').focus({preventScroll:true}),450)};
+const tabs=[...document.querySelectorAll('.tabbar a,.nav nav a')];
+const so=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)tabs.forEach(t=>t.classList.toggle('on',t.getAttribute('href')==='#'+e.target.id))}),{rootMargin:'-45% 0px -50% 0px'});
+['top','insights','directory','records','method'].forEach(i=>so.observe(el(i)));
+const ro=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');ro.unobserve(e.target)}}),{threshold:.12});
+const reveal=()=>document.querySelectorAll('.card,.kpi,.bank,.case,h2').forEach(n=>{if(!n.classList.contains('rv')){n.classList.add('rv');ro.observe(n)}});
+reveal();new MutationObserver(reveal).observe(el('rows'),{childList:true});new MutationObserver(reveal).observe(el('cases'),{childList:true});
+document.querySelectorAll('.kpi strong').forEach(s=>{const m=s.textContent.match(/^([\d.,]+)(.*)$/);if(!m)return;const end=parseFloat(m[1].replace(/,/g,'')),dec=(m[1].split('.')[1]||'').length;let t0;const step=t=>{t0??=t;const k=Math.min(1,(t-t0)/1100),v=end*(1-Math.pow(1-k,3));s.textContent=v.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec})+m[2];if(k<1)requestAnimationFrame(step)};new IntersectionObserver((es,o)=>{if(es[0].isIntersecting){o.disconnect();requestAnimationFrame(step)}}).observe(s)});
+// swipe down to close sheet
+let sy=null;const dlg=el('profile');dlg.addEventListener('touchstart',e=>{sy=dlg.scrollTop<=0?e.touches[0].clientY:null},{passive:true});
+dlg.addEventListener('touchmove',e=>{if(sy!==null){const d=Math.max(0,e.touches[0].clientY-sy);dlg.style.transform='translateY('+d+'px)'}},{passive:true});
+dlg.addEventListener('touchend',e=>{if(sy!==null){const d=e.changedTouches[0].clientY-sy;dlg.style.transform='';if(d>110)dlg.close()}sy=null});
+dlg.insertAdjacentHTML('afterbegin','<div class="grip" aria-hidden="true"></div>');
+// spotlight follow on cards
+document.addEventListener('pointermove',e=>{const c=e.target.closest?.('.glass');if(c){const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')}});
