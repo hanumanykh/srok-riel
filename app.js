@@ -10,12 +10,13 @@ banks.forEach(b=>{const n=metric(b,'Non-performing'),e=metric(b,'Book equity'),o
  b.npl=parseFloat(n?.value);b.prev=num(n?.detail.match(/Prior year: ([\d.]+)%/)?.[1]);b.loans=num(n?.detail.match(/Loans: KHR ([\d,]+)/)?.[1]);
  b.eq=parseFloat(e?.value);b.assets=num(e?.detail.match(/assets of KHR ([\d,]+)/)?.[1]);b.local=parseFloat((o||b.origin)?.value);b.peer=b.type==='Commercial'?8.3:13.2});
 function integrity(b){
- if(b.events.some(e=>e.kind==='Sanction'&&e.subject.startsWith('Bank')))return [5,'Direct sanction'];
+ if(b.events.some(e=>e.kind==='Sanction'&&e.subject.startsWith('Bank')))return [5,'Sanction on the bank'];
  if(b.status==='Licence withdrawn')return [4,'Licence withdrawn'];
- if(b.events.some(e=>e.kind==='Regulatory action'&&e.subject==='Bank'))return [3,'Official intervention'];
- if(b.events.some(e=>/^(Parent|Overseas|Predecessor|Chairman|Historical)/.test(e.subject)))return [2,'Related-party record'];
- return b.events.length?[1,'Reported dispute']:[0,'No case indexed'];
+ if(b.events.some(e=>e.kind==='Regulatory action'&&e.subject==='Bank'))return [3,'Regulatory action on the bank'];
+ if(b.events.some(e=>/^(Parent|Overseas|Predecessor|Chairman|Historical)/.test(e.subject)))return [2,'Parent, shareholder or historical record'];
+ return b.events.length?[1,'Allegation or dispute (unproven)']:[0,'No case indexed'];
 }
+const scope=e=>e.kind==='Allegation'||e.kind==='Reported dispute'?'Unproven':/^Bank/.test(e.subject)?'Bank itself':/^(Parent|Overseas)/.test(e.subject)?'Parent / overseas':/^(Historical|Predecessor)/.test(e.subject)?'Historical':/^Chairman/.test(e.subject)?'Shareholder / officer':'Third party';
 const tagCls=s=>s>=3?'warn':s?'mid':'';
 const initial=b=>b.display.split(/[^a-z0-9]+/i).slice(0,2).map(x=>x[0]).join('').toUpperCase();
 const id=b=>banks.indexOf(b);
@@ -23,7 +24,7 @@ const records=banks.flatMap(b=>b.events.map(e=>({...e,b}))).sort((a,b)=>b.date.l
 const withFin=banks.filter(b=>!isNaN(b.assets));
 const totAssets=withFin.reduce((s,b)=>s+b.assets,0),totLoans=withFin.reduce((s,b)=>s+(b.loans||0),0);
 const nplW=withFin.reduce((s,b)=>s+(b.loans&&!isNaN(b.npl)?b.loans*b.npl/100:0),0)/totLoans*100;
-el('stats').innerHTML=[[banks.length,'Bank profiles'],[banks.filter(b=>b.status!=='Licence withdrawn').length,'On August register'],[fr(totAssets/1e6,0)+' bn','Total assets (KHR)'],[fr(nplW)+'%','Sector weighted NPL'],[records.length,'Case-file entries']].map(([n,t])=>'<div class="kpi glass"><strong>'+n+'</strong><span>'+t+'</span></div>').join('');
+el('stats').innerHTML=[[banks.length,'Bank profiles'],[banks.filter(b=>b.status!=='Licence withdrawn').length,'On August register'],[fr(totAssets/1e6,0)+' tn','Total assets (KHR)'],[fr(nplW)+'%','Sector weighted NPL'],[records.length,'Case-file entries']].map(([n,t])=>'<div class="kpi glass"><strong>'+n+'</strong><span>'+t+'</span></div>').join('');
 
 /* ---------- Charts (vanilla SVG, no dependency) ---------- */
 const C={gold:'var(--gold)',jade:'var(--jade)',red:'var(--red)',blue:'var(--blue)'};
@@ -32,19 +33,19 @@ const tipAttr=(b,t)=>' data-tip="'+esc(t)+'"'+(b?' data-bank="'+id(b)+'"':'');
 const short=s=>s.length>22?s.slice(0,21)+'…':s;
 function barsH(target,items,fmt,color){const w=640,rh=26,lw=170,h=items.length*rh+4,max=Math.max(...items.map(i=>i.v));
  el(target).innerHTML=svg(w,h,items.map((i,k)=>{const y=k*rh,bw=(w-lw-60)*i.v/max;return '<text class="lbl" x="'+(lw-8)+'" y="'+(y+17)+'" text-anchor="end">'+esc(short(i.l))+'</text><rect class="bar" x="'+lw+'" y="'+(y+5)+'" width="'+bw+'" height="16" rx="6" fill="'+(i.c||color)+'"'+tipAttr(i.b,i.l+' · '+fmt(i.v))+'/><text x="'+(lw+bw+6)+'" y="'+(y+17)+'">'+fmt(i.v)+'</text>'}).join(''))}
-barsH('chAssets',withFin.slice().sort((a,b)=>b.assets-a.assets).slice(0,12).map((b,k)=>({l:b.display,v:b.assets/1e6,b,c:k<3?C.gold:C.jade})),v=>fr(v,1)+' bn');
+barsH('chAssets',withFin.slice().sort((a,b)=>b.assets-a.assets).slice(0,12).map((b,k)=>({l:b.display,v:b.assets/1e6,b,c:k<3?C.gold:C.jade})),v=>fr(v,1)+' tn');
 // Origin donut
 (()=>{const o=banks.filter(b=>!isNaN(b.local)),loc=o.reduce((s,b)=>s+b.local,0)/o.length,R=70,L=2*Math.PI*R,d=L*loc/100;
  el('chOrigin').innerHTML=svg(240,200,'<g transform="translate(120,100) rotate(-90)"><circle r="'+R+'" fill="none" stroke="var(--blue)" stroke-width="26"'+tipAttr(0,'Foreign · '+fr(100-loc)+'%')+' class="bar"/><circle r="'+R+'" fill="none" stroke="var(--gold)" stroke-width="26" stroke-dasharray="'+d+' '+L+'"'+tipAttr(0,'Cambodian · '+fr(loc)+'%')+' class="bar"/></g><text x="120" y="98" text-anchor="middle" class="lbl" style="font:600 26px Fraunces,serif">'+fr(100-loc,0)+'%</text><text x="120" y="118" text-anchor="middle">foreign capital</text>')+'<div class="legend"><span><i style="background:var(--gold)"></i>Cambodian</span><span><i style="background:var(--blue)"></i>Foreign</span><span>'+o.length+' banks</span></div>'})();
 // Scatter NPL vs equity
-(()=>{const p=banks.filter(b=>!isNaN(b.npl)&&!isNaN(b.eq)),w=640,h=300,m=36,X=Math.min(40,Math.max(...p.map(b=>b.npl))),Y=Math.min(60,Math.max(...p.map(b=>b.eq))),sx=v=>m+(w-m-10)*Math.min(v,X)/X,sy=v=>h-m-(h-m-10)*Math.min(v,Y)/Y,amax=Math.max(...p.map(b=>b.assets||0));
- let g='';for(let t=0;t<=X;t+=X>20?10:5)g+='<line x1="'+sx(t)+'" x2="'+sx(t)+'" y1="10" y2="'+(h-m)+'" stroke="var(--line)"/><text x="'+sx(t)+'" y="'+(h-m+16)+'" text-anchor="middle">'+t+'%</text>';
- for(let t=0;t<=Y;t+=10)g+='<line x1="'+m+'" x2="'+w+'" y1="'+sy(t)+'" y2="'+sy(t)+'" stroke="var(--line)"/><text x="'+(m-6)+'" y="'+(sy(t)+4)+'" text-anchor="end">'+t+'%</text>';
+(()=>{const p=banks.filter(b=>!isNaN(b.npl)&&!isNaN(b.eq)),w=640,h=300,m=36,X=Math.ceil(Math.max(...p.map(b=>b.npl))/10)*10,Y=Math.ceil(Math.max(...p.map(b=>b.eq))/10)*10,sx=v=>m+(w-m-10)*Math.min(v,X)/X,sy=v=>h-m-(h-m-10)*Math.min(v,Y)/Y,amax=Math.max(...p.map(b=>b.assets||0));
+ let g='';for(let t=0;t<=X;t+=X>50?20:X>20?10:5)g+='<line x1="'+sx(t)+'" x2="'+sx(t)+'" y1="10" y2="'+(h-m)+'" stroke="var(--line)"/><text x="'+sx(t)+'" y="'+(h-m+16)+'" text-anchor="middle">'+t+'%</text>';
+ for(let t=0;t<=Y;t+=Y>60?20:10)g+='<line x1="'+m+'" x2="'+w+'" y1="'+sy(t)+'" y2="'+sy(t)+'" stroke="var(--line)"/><text x="'+(m-6)+'" y="'+(sy(t)+4)+'" text-anchor="end">'+t+'%</text>';
  g+='<line x1="'+sx(8.3)+'" x2="'+sx(8.3)+'" y1="10" y2="'+(h-m)+'" stroke="var(--gold)" stroke-dasharray="4 4"/><text x="'+(sx(8.3)+4)+'" y="20" style="fill:var(--gold)">commercial peers 8.3%</text>';
  g+=p.map(b=>'<circle class="dot" cx="'+sx(b.npl)+'" cy="'+sy(b.eq)+'" r="'+(4+10*Math.sqrt((b.assets||0)/amax))+'" fill="'+(b.npl>b.peer?C.red:C.jade)+'" fill-opacity=".7"'+tipAttr(b,b.display+' · NPL '+fr(b.npl)+'% · equity/assets '+fr(b.eq)+'%')+'/>').join('');
  el('chScatter').innerHTML=svg(w,h,g)+'<div class="legend"><span><i style="background:var(--jade)"></i>Below peer average</span><span><i style="background:var(--red)"></i>Above peers</span><span>Size = total assets</span></div>'})();
 // Case kinds
-(()=>{const K={Sanction:['Sanctions',C.red],'Regulatory action':['Regulatory actions',C.gold],Allegation:['Allegations',C.blue],'Reported dispute':['Disputes',C.jade]},cnt={};records.forEach(r=>cnt[r.kind]=(cnt[r.kind]||0)+1);
+(()=>{const K={Sanction:['Sanctions',C.red],'Regulatory action':['Regulatory actions',C.gold],Allegation:['Allegations',C.blue],'Allegation or dispute (unproven)':['Disputes',C.jade]},cnt={};records.forEach(r=>cnt[r.kind]=(cnt[r.kind]||0)+1);
  barsH('chCases',Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({l:K[k]?.[0]||k,v,c:K[k]?.[1]||C.jade})),v=>v)})();
 // NPL deltas (diverging)
 (()=>{const d=banks.filter(b=>!isNaN(b.npl)&&!isNaN(b.prev)).map(b=>({b,v:b.npl-b.prev})).sort((a,b)=>b.v-a.v),pick=[...d.slice(0,7),...d.slice(-7)],w=1000,rh=24,h=pick.length*rh,mid=w/2+80,max=Math.max(...pick.map(p=>Math.abs(p.v))),sc=(w/2-110)/max;
@@ -67,17 +68,17 @@ function render(){
   if(s==='low'||s==='high'){const x=a.npl,y=b.npl;v=isNaN(x)||isNaN(y)?Number(isNaN(x))-Number(isNaN(y)):(s==='low'?x-y:y-x)}
   return v||a.display.localeCompare(b.display)});
  el('count').textContent=set.length?Math.min(limit,set.length)+' of '+set.length+' banks':'No matching banks. Try another name or filter.';
- el('rows').innerHTML=set.slice(0,limit).map(b=>{const [sc,lab]=integrity(b);return '<button class="bank glass" data-bank="'+id(b)+'"><span class="who"><span class="mon">'+esc(initial(b))+'</span><span><b>'+esc(b.display)+'</b><em>'+TYPE[b.type]+(isNaN(b.assets)?'':' · '+fr(b.assets/1e6)+' bn KHR')+'</em></span></span><span class="owner">'+esc(b.ownership?.owner||'Shareholders unverified')+'</span>'+meter(b)+'<span class="foot"><span>'+(b.status==='Licence withdrawn'?'Licence withdrawn':isNaN(b.npl)?'NPL unavailable':'NPL '+fr(b.npl)+'% · peers '+fr(b.peer)+'%')+'</span><span class="tag '+tagCls(sc)+'">'+lab+'</span></span></button>'}).join('');
+ el('rows').innerHTML=set.slice(0,limit).map(b=>{const [sc,lab]=integrity(b);return '<button class="bank glass" data-bank="'+id(b)+'"><span class="who"><span class="mon">'+esc(initial(b))+'</span><span><b>'+esc(b.display)+'</b><em>'+TYPE[b.type]+(isNaN(b.assets)?'':' · '+fr(b.assets/1e6)+' tn KHR')+'</em></span></span><span class="owner">'+esc(b.ownership?.owner||'Shareholders unverified')+'</span>'+meter(b)+'<span class="foot"><span>'+(b.status==='Licence withdrawn'?'Licence withdrawn':isNaN(b.npl)?'NPL unavailable':'NPL '+fr(b.npl)+'% · peers '+fr(b.peer)+'%')+'</span><span class="tag '+tagCls(sc)+'">'+lab+'</span></span></button>'}).join('');
  el('more').hidden=set.length<=limit;
 }
 function openBank(i){
  const b=banks[i],o=b.ownership,v=b.npl,p=b.peer,[sc,lab]=integrity(b);
- const mini=[[isNaN(v)?'—':fr(v)+'%','NPL 2025 (peers '+fr(p)+'%)'],[isNaN(b.prev)?'—':fr(b.prev)+'%','NPL 2024'],[isNaN(b.eq)?'—':fr(b.eq)+'%','Equity / assets'],[isNaN(b.assets)?'—':fr(b.assets/1e6)+' bn','Assets (KHR)'],[isNaN(b.loans)?'—':fr(b.loans/1e6)+' bn','Loans (KHR)']];
- el('body').innerHTML='<span class="eyebrow">'+TYPE[b.type]+' bank</span><h2>'+esc(b.display)+'</h2><p>'+esc(b.name)+' · <b>'+esc(b.status)+'</b> · '+source(b.statusSource||b.source,'Source')+'</p><p><span class="tag '+tagCls(sc)+'">'+lab+'</span> <span class="tag '+(isNaN(v)?'':v>p?'warn':'')+'">'+(isNaN(v)?'Assessment unavailable':v>p?'Above peers':'At or below peers')+'</span></p>'
- +'<h3>Key indicators</h3><div class="mini">'+mini.map(([a,c])=>'<div><strong>'+a+'</strong><span>'+c+'</span></div>').join('')+'</div>'+(isNaN(v)?'':'<p style="margin-top:14px">'+meter(b)+'</p>')
+ const mini=[[isNaN(v)?'—':fr(v)+'%','NPL 2025 (peers '+fr(p)+'%)'],[isNaN(b.prev)?'—':fr(b.prev)+'%','NPL 2024'],[isNaN(b.eq)?'—':fr(b.eq)+'%','Equity / assets'],[isNaN(b.assets)?'—':fr(b.assets/1e6)+' tn','Assets (KHR)'],[isNaN(b.loans)?'—':fr(b.loans/1e6)+' tn','Loans (KHR)']];
+ el('body').innerHTML='<span class="eyebrow">'+TYPE[b.type]+' bank</span><h2>'+esc(b.display)+'</h2><p>'+esc(b.name)+' · <b>'+esc(b.status)+'</b> · '+source(b.statusSource||b.source,'Source')+'</p><p><span class="tag '+tagCls(sc)+'">'+lab+'</span> <span class="tag '+(isNaN(v)?'':v>p?'warn':'')+'">'+(isNaN(v)?'Assessment unavailable':v>p?'NPL above peers':'NPL at or below peers')+'</span></p>'
+ +'<h3>Key indicators</h3><p class="note">Individual reported indicators, not a safety rating.</p><div class="mini">'+mini.map(([a,c])=>'<div><strong>'+a+'</strong><span>'+c+'</span></div>').join('')+'</div>'+(isNaN(v)?'':'<p style="margin-top:14px">'+meter(b)+'</p>')
  +'<h3>Ownership and control</h3><b>'+esc(o?.owner||'Shareholders unverified')+'</b><p>'+esc(o?.detail||b.context?.detail||'A reliable shareholder breakdown was unavailable in the reviewed material.')+'</p>'+((o||b.context)?source((o||b.context).url,'Ownership source'):'')
  +'<h3>Financial sources</h3>'+b.fin.map(f=>'<p><b>'+esc(f.value)+' · '+esc(f.metric)+'</b><br>'+esc(f.asof)+' · '+esc(f.detail)+' '+source(f.url,'Table')+'</p>').join('')+(!b.fin.length?'<p>No comparable bank-level data in this edition.</p>':'')
- +'<h3>Regulatory record</h3>'+b.events.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>'<article><span class="eyebrow">'+esc(e.kind)+' · '+esc(e.date)+'</span><h4>'+esc(e.title)+'</h4><p><b>'+esc(e.subject)+'</b> — '+esc(e.detail)+'</p>'+source(e.url,'Read the source')+'</article>').join('')+(!b.events.length?'<p>No event indexed. Shareholder screening is incomplete.</p>':'');
+ +'<h3>Regulatory and integrity record</h3><p class="note">The label above names the most significant documented event only. It is not an overall judgment of the bank. Each entry states who it concerns.</p>'+b.events.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>'<article><span class="eyebrow">'+esc(scope(e))+' · '+esc(e.kind)+' · '+esc(e.date)+'</span><h4>'+esc(e.title)+'</h4><p><b>'+esc(e.subject)+'</b> — '+esc(e.detail)+'</p>'+source(e.url,'Read the source')+'</article>').join('')+(!b.events.length?'<p>No event indexed. Shareholder screening is incomplete.</p>':'');
  if(!el('profile').open)el('profile').showModal();el('profile').scrollTop=0;try{history.replaceState(null,'','#bank-'+i)}catch{}
 }
 let caseLimit=6;
@@ -114,3 +115,5 @@ dlg.addEventListener('touchend',e=>{if(sy!==null){const d=e.changedTouches[0].cl
 dlg.insertAdjacentHTML('afterbegin','<div class="grip" aria-hidden="true"></div>');
 // spotlight follow on cards
 document.addEventListener('pointermove',e=>{const c=e.target.closest?.('.glass');if(c){const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')}});
+
+el('coverage').innerHTML=[[banks.length,'profiles in total'],[banks.filter(b=>!isNaN(b.npl)).length,'with NBC loan data (FY2025)'],[banks.filter(b=>b.ownership).length,'with sourced ownership'],[banks.filter(b=>b.events.length).length,'with at least one indexed event'],[banks.filter(b=>b.status==='Licence withdrawn').length,'withdrawn licences kept for history']].map(([n,t])=>'<li><b>'+n+'</b> '+t+'</li>').join('');
