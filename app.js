@@ -8,7 +8,7 @@ const num=s=>s?parseFloat(s.replace(/,/g,'')):NaN;
 // Derived indicators from the NBC detail strings
 banks.forEach(b=>{const n=metric(b,'Non-performing'),e=metric(b,'Book equity'),o=metric(b,'Paid-up');
  b.npl=parseFloat(n?.value);b.prev=num(n?.detail.match(/Prior year: ([\d.]+)%/)?.[1]);b.loans=num(n?.detail.match(/Loans: KHR ([\d,]+)/)?.[1]);
- b.eq=parseFloat(e?.value);b.assets=num(e?.detail.match(/assets of KHR ([\d,]+)/)?.[1]);b.local=parseFloat(o?.value);b.peer=b.type==='Commercial'?8.3:13.2});
+ b.eq=parseFloat(e?.value);b.assets=num(e?.detail.match(/assets of KHR ([\d,]+)/)?.[1]);b.local=parseFloat((o||b.origin)?.value);b.peer=b.type==='Commercial'?8.3:13.2});
 function integrity(b){
  if(b.events.some(e=>e.kind==='Sanction'&&e.subject.startsWith('Bank')))return [5,'Direct sanction'];
  if(b.status==='Licence withdrawn')return [4,'Licence withdrawn'];
