@@ -97,3 +97,4 @@ h1 em{background-size:200% auto;animation:shine 6s linear infinite}@keyframes sh
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;background-image:radial-gradient(rgba(255,255,255,.8) 1px,transparent 1px);background-size:3px 3px}
 @media(max-width:760px){#chProfit svg{min-width:640px}.seg{width:100%}.seg button{flex:1}}
 .mon img.wide{padding:3px}.plogo{display:block;max-width:260px;max-height:56px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:12px}
+.mon img.wide{padding:4px}.mon img.dark,.plogo.dark{background:#0d2a25}.mon:has(img.wide){width:64px;border-radius:12px}
