@@ -140,3 +140,5 @@ h2{line-height:1.15}section{padding-top:56px}
 .open{font-size:14px;color:var(--gold);font-weight:600}.bank{gap:16px}.bank .foot{margin-top:auto}
 .rv{opacity:1!important;transform:none!important}
 .kpi{min-height:0}.kpi span{display:block;line-height:1.35}
+.mon img[src*="google.com"]{background:transparent;padding:9px}
+.tabbar{display:grid!important;grid-template-columns:repeat(5,1fr)}@media(min-width:761px){.tabbar{display:none!important}}
