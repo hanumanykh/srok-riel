@@ -135,3 +135,4 @@ figcaption b{font-size:18px}figcaption span{font-size:14px}
 .glass::after{display:none}
 h2{line-height:1.15}section{padding-top:56px}
 .case span,.case strong{font-size:16px}
+.hb{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:16px}.hb li{display:grid;grid-template-columns:1fr auto;gap:6px 10px;font-size:15px}.hb b{font:600 18px Fraunces,serif}.hb i{grid-column:1/-1;height:10px;border-radius:9px;display:block;min-width:8px}

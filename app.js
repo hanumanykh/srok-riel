@@ -43,9 +43,9 @@ el('stats').innerHTML=[[banks.length,'Bank profiles'],[banks.filter(b=>b.status!
 const C={gold:'var(--gold)',jade:'var(--jade)',red:'var(--red)',blue:'var(--blue)'};
 const svg=(w,h,inner)=>'<svg viewBox="0 0 '+w+' '+h+'" role="img">'+inner+'</svg>';
 const tipAttr=(b,t)=>' data-tip="'+esc(t)+'"'+(b?' data-bank="'+id(b)+'"':'');
-const short=s=>s.length>22?s.slice(0,21)+'…':s;
-function barsH(target,items,fmt,color){const w=640,rh=26,lw=170,h=items.length*rh+4,max=Math.max(...items.map(i=>i.v));
- el(target).innerHTML=svg(w,h,items.map((i,k)=>{const y=k*rh,bw=(w-lw-60)*i.v/max;return '<text class="lbl" x="'+(lw-8)+'" y="'+(y+17)+'" text-anchor="end">'+esc(short(i.l))+'</text><rect class="bar" x="'+lw+'" y="'+(y+5)+'" width="'+bw+'" height="16" rx="6" fill="'+(i.c||color)+'"'+tipAttr(i.b,i.l+' · '+fmt(i.v))+'/><text x="'+(lw+bw+6)+'" y="'+(y+17)+'">'+fmt(i.v)+'</text>'}).join(''))}
+const short=s=>{s=s.replace(/\s*\((?!BIDC|APD).*?\)/g,'').replace(/,? ?(Phnom Penh Branch|Cambodia Branch|Public Co.*|Co\., Ltd.*|Public Company.*)$/,'').replace(/^Branch of /,'');return s.length>24?s.slice(0,23)+'…':s};
+function barsH(target,items,fmt,color){const w=640,rh=28,lw=180,h=items.length*rh+4,max=Math.max(...items.map(i=>i.v));
+ el(target).innerHTML=svg(w,h,items.map((i,k)=>{const y=k*rh,bw=(w-lw-150)*i.v/max;return '<text class="lbl" x="'+(lw-8)+'" y="'+(y+17)+'" text-anchor="end">'+esc(short(i.l))+'</text><rect class="bar" x="'+lw+'" y="'+(y+5)+'" width="'+bw+'" height="16" rx="6" fill="'+(i.c||color)+'"'+tipAttr(i.b,i.l+' · '+fmt(i.v))+'/><text x="'+(lw+bw+6)+'" y="'+(y+17)+'">'+fmt(i.v)+'</text>'}).join(''))}
 barsH('chAssets',withFin.slice().sort((a,b)=>b.assets-a.assets).slice(0,12).map((b,k)=>({l:b.display,v:b.assets/1e6,b,c:C.jade})),v=>fr(v,1)+' tn · '+usd(v*1e6));
 // Origin donut
 (()=>{const o=banks.filter(b=>!isNaN(b.local)),loc=o.reduce((s,b)=>s+b.local,0)/o.length,R=70,L=2*Math.PI*R,d=L*loc/100;
@@ -59,7 +59,7 @@ barsH('chAssets',withFin.slice().sort((a,b)=>b.assets-a.assets).slice(0,12).map(
  el('chScatter').innerHTML=svg(w,h,g)+'<div class="legend"><span><i style="background:var(--jade)"></i>Below peer average</span><span><i style="background:var(--red)"></i>Above peers</span><span>Size = total assets</span></div>'})();
 // Case kinds
 (()=>{const K={Sanction:['Sanctions',C.red],'Regulatory action':['Regulatory actions',C.gold],Allegation:['Allegations',C.blue],'Allegation or dispute (unproven)':['Disputes',C.jade]},cnt={};records.forEach(r=>cnt[r.kind]=(cnt[r.kind]||0)+1);
- barsH('chCases',Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({l:K[k]?.[0]||k,v,c:K[k]?.[1]||C.jade})),v=>v)})();
+ el('chCases').innerHTML='<ul class="hb">'+Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([k,v])=>'<li><span>'+(K[k]?.[0]||k)+'</span><b>'+v+'</b><i style="width:'+(v/records.length*100)+'%;background:'+(K[k]?.[1]||C.jade)+'"></i></li>').join('')+'</ul>'})();
 // NPL deltas (diverging)
 (()=>{const d=banks.filter(b=>!isNaN(b.npl)&&!isNaN(b.prev)).map(b=>({b,v:b.npl-b.prev})).sort((a,b)=>b.v-a.v),pick=[...d.slice(0,7),...d.slice(-7)],w=1000,rh=24,h=pick.length*rh,mid=w/2+80,max=Math.max(...pick.map(p=>Math.abs(p.v))),sc=(w/2-110)/max;
  el('chDelta').innerHTML=svg(w,h,'<line x1="'+mid+'" x2="'+mid+'" y1="0" y2="'+h+'" stroke="var(--line)"/>'+pick.map((p,k)=>{const y=k*rh,bw=Math.abs(p.v)*sc,x=p.v>0?mid:mid-bw;return '<text class="lbl" x="'+(mid-(p.v>0?8:bw+8))+'" y="'+(y+16)+'" text-anchor="end">'+esc(short(p.b.display))+'</text><rect class="bar" x="'+x+'" y="'+(y+4)+'" width="'+Math.max(bw,2)+'" height="15" rx="5" fill="'+(p.v>0?C.red:C.jade)+'"'+tipAttr(p.b,p.b.display+' · '+fr(p.b.prev)+'% → '+fr(p.b.npl)+'%')+'/><text x="'+(p.v>0?mid+bw+6:mid+6)+'" y="'+(y+16)+'">'+(p.v>0?'+':'')+fr(p.v)+' pt</text>'}).join(''))})();
