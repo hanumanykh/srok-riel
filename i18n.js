@@ -1,6 +1,6 @@
 /* Khmer interface (UI chrome only; data, names and source excerpts stay in English). Translation pending native review. */
 (()=>{
-const KM={
+const KM={"banks covered":"ធនាគារដែលបានគ្របដណ្តប់","riel in total assets":"រៀល ទ្រព្យសកម្មសរុប","riel of net profit in 2025":"រៀល ប្រាក់ចំណេញសុទ្ធឆ្នាំ២០២៥","of loans not being repaid":"នៃឥណទានមិនត្រូវបានសងវិញ","banks with a foreign parent":"ធនាគារមានក្រុមមេបរទេស","documented events":"ព្រឹត្តិការណ៍មានឯកសារ","The 12 largest banks":"ធនាគារ ១២ ធំបំផុត","Where bad loans rose or fell":"កន្លែងដែលឥណទានអាក្រក់កើនឡើង ឬថយចុះ","Open profile":"បើកប្រវត្តិ",
 "Insights":"ការវិភាគ","Owners":"ម្ចាស់","Directory":"បញ្ជីធនាគារ","Case files":"សំណុំរឿង","Methodology":"វិធីសាស្ត្រ","Editorial":"វិចារណកថា","Home":"ទំព័រដើម","Banks":"ធនាគារ","Cases":"សំណុំរឿង","About":"អំពី",
 "BANK INTELLIGENCE":"ព័ត៌មានធនាគារ","Cambodia · Bank intelligence":"កម្ពុជា · ព័ត៌មានធនាគារ",
 "Who owns":"តើអ្នកណាជាម្ចាស់","Cambodia’s banks?":"ធនាគារនៅកម្ពុជា?",

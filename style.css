@@ -223,3 +223,24 @@ dialog{background:var(--bg);border-color:var(--line)}
 @keyframes draw{to{stroke-dashoffset:0}}
 @media(max-width:900px){.intro{flex-direction:column;align-items:stretch;min-height:0}.rosette{max-width:420px;margin:10px auto 0}h1{max-width:none}}
 html.km h1{max-width:none}
+/* ===== readability pass ===== */
+[hidden]{display:none!important}
+.hbars{display:grid;gap:2px}.hr{display:grid;grid-template-columns:minmax(120px,30%) 1fr 92px;gap:12px;align-items:center;padding:5px 6px;border-radius:3px;cursor:pointer}.hr:hover{background:var(--s2)}
+.hr .hl{font-size:14.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.ht{position:relative;height:14px}.ht i{position:absolute;top:0;height:100%;border-radius:2px}.ht i.pos{background:var(--jade)}.ht i.neg{background:var(--red)}.ht i.ink{background:var(--ink)}.ht b{position:absolute;top:-5px;bottom:-5px;width:1px;background:var(--faint)}
+@media(prefers-reduced-motion:no-preference){.ht i{transform-origin:left;animation:grow .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}}
+.hv{font-size:14px;font-weight:600;color:var(--jade);font-variant-numeric:tabular-nums}.hv.neg{color:var(--red)}#chAssets .hv{color:var(--ink);font-weight:500}
+#chProfit{padding-right:4px}.pfscroll{max-height:620px}
+@media(max-width:600px){.hr{grid-template-columns:minmax(96px,38%) 1fr 70px;gap:8px}.hr .hl{font-size:13px}.hv{font-size:12.5px}.chart.hbars{margin:0;padding:0;overflow:visible}#chAssets,#chDelta,#chProfit{min-width:0}}
+/* KPIs */
+.kpi strong{font-size:36px;line-height:1}.kpi span{font-size:15px;color:var(--ink);margin-top:8px}.kpi em{display:block;font-style:normal;font-size:13px;color:var(--mute);margin-top:3px}
+/* table: drop the type column, tighter owner column so key numbers fit */
+.bt{min-width:980px}.bt th:nth-child(2),.bt td:nth-child(2){display:none}.bt .ow{max-width:180px}
+/* calmer furniture */
+.case time{text-transform:none;letter-spacing:0;font-size:13px;font-weight:600}
+.note,.lead,#insights>.note{max-width:72ch}
+#groups{display:none}
+.linkbtn{border:0;background:none;color:var(--gold);font:600 14px "Public Sans",sans-serif;padding:6px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.card p,.cov{font-size:15.5px;line-height:1.65}
+section h2+.lead{margin-top:0}
+.hr{grid-template-columns:200px 1fr 96px}@media(max-width:600px){.hr{grid-template-columns:minmax(96px,38%) 1fr 70px}#chScatter svg{min-width:0!important}#chScatter text{font-size:24px}#chScatter{margin:0;padding:0;overflow:visible}}
