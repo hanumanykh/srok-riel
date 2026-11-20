@@ -22,7 +22,8 @@ const nodes=banks.map((b,i)=>({i,r:2+7*Math.sqrt((b.assets||amax*.02)/amax),x:Ma
 const links=[];sharedOwners.forEach(o=>{const a=[...o.banks];for(let k=1;k<a.length;k++)links.push([a[0],a[k]])});
 const size=()=>{const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)};
 let mx=-1,my=-1;cv.parentElement.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect();mx=(e.clientX-r.left)/W;my=(e.clientY-r.top)/H});
-const draw=()=>{ctx.clearRect(0,0,W,H);const gold=css('--gold')||'#D6B46A',jade=css('--jade'),red=css('--red');
+let vis=true;new IntersectionObserver(es=>{const was=vis;vis=es[0].isIntersecting;if(vis&&!was&&!RM)draw()}).observe(cv);
+const draw=()=>{if(!vis)return;ctx.clearRect(0,0,W,H);const gold=css('--gold')||'#D6B46A',jade=css('--jade'),red=css('--red');
  for(const n of nodes){n.x+=n.vx;n.y+=n.vy;if(n.x<.02||n.x>.98)n.vx*=-1;if(n.y<.04||n.y>.96)n.vy*=-1;if(mx>=0){const dx=n.x-mx,dy=n.y-my,d=Math.hypot(dx,dy);if(d<.12){n.x+=dx*.004;n.y+=dy*.004}}}
  ctx.lineWidth=.6;for(let a=0;a<nodes.length;a++)for(let b=a+1;b<nodes.length;b++){const p=nodes[a],q=nodes[b],d=Math.hypot((p.x-q.x)*W,(p.y-q.y)*H);if(d<110){ctx.strokeStyle=gold;ctx.globalAlpha=(1-d/110)*.22;ctx.beginPath();ctx.moveTo(p.x*W,p.y*H);ctx.lineTo(q.x*W,q.y*H);ctx.stroke()}}
  ctx.lineWidth=1.2;ctx.globalAlpha=.55;ctx.strokeStyle=gold;for(const[a,b]of links){const p=nodes[a],q=nodes[b];ctx.beginPath();ctx.moveTo(p.x*W,p.y*H);ctx.lineTo(q.x*W,q.y*H);ctx.stroke()}
@@ -110,7 +111,7 @@ document.querySelector('.ctyb').addEventListener('click',e=>{const r=e.target.cl
  box.innerHTML='<svg viewBox="0 0 '+(cols*CW)+' '+(rows*CH)+'" class="cmap" role="img" aria-label="Banks grouped by country of controlling owner">'+svg+links+nodes+'</svg>';
  const s=box.firstChild;s.addEventListener('pointerover',e=>{const g=e.target.closest('.bn');s.classList.toggle('dim',!!g);s.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));if(!g)return;const gs=g.dataset.gs.split('|').filter(Boolean);g.classList.add('hl');s.querySelectorAll('.bn').forEach(o=>{if(o.dataset.gs.split('|').some(x=>gs.includes(x)))o.classList.add('hl')});s.querySelectorAll('.gl').forEach(l=>{if(gs.includes(l.dataset.g))l.classList.add('hl')})});
  s.addEventListener('pointerleave',()=>{s.classList.remove('dim');s.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'))});};
- draw();let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(draw,200)});
+ draw();
  el('mapq').oninput=e=>{const q=e.target.value.toLowerCase().trim(),s=box.firstChild;s.classList.toggle('dim',!!q);s.querySelectorAll('.bn').forEach(g=>{const b=banks[g.dataset.bank];g.classList.toggle('hl',!!q&&(b.display+' '+g.dataset.gs).toLowerCase().includes(q))})};
  document.querySelector('.maptools .legend').innerHTML='<span><i style="background:var(--jade);border-radius:50%"></i>Profitable bank</span><span><i style="background:var(--red);border-radius:50%"></i>Loss-making</span><span>Size = total assets</span><span><i style="background:var(--gold);height:2px;width:14px;vertical-align:3px"></i>Same parent group</span>';
  document.querySelector('#owners .lead').textContent='Each bubble is a bank, sized by assets and placed in the country of its controlling group. Gold arcs join banks owned by the same group. Hover a bank to see its group; click to open it.';
@@ -129,3 +130,5 @@ document.querySelector('.maptools .legend').innerHTML='<span><i style="backgroun
 document.querySelector('#owners .lead').textContent='Banks grouped by the country of their controlling parent group, largest first. A gold badge marks groups that own more than one bank: hover it to light up the sister banks. Click any bank to open it.';
 const old=document.querySelector('.ctyb');if(old)old.remove();
 })();
+(()=>{document.querySelectorAll('#omap .cc').forEach(c=>{const n=c.querySelectorAll('li').length;if(n>4){c.classList.add('clip');c.insertAdjacentHTML('beforeend','<button class="more">Show all '+n+'</button>')}});
+el('omap').addEventListener('click',e=>{const m=e.target.closest('.more');if(!m)return;e.stopPropagation();const c=m.closest('.cc');c.classList.toggle('clip');m.textContent=c.classList.contains('clip')?'Show all '+c.querySelectorAll('li').length:'Show less'},true);})();
