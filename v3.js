@@ -29,8 +29,8 @@ const draw=()=>{if(!vis)return;ctx.clearRect(0,0,W,H);const gold=css('--gold')||
  ctx.lineWidth=1.2;ctx.globalAlpha=.55;ctx.strokeStyle=gold;for(const[a,b]of links){const p=nodes[a],q=nodes[b];ctx.beginPath();ctx.moveTo(p.x*W,p.y*H);ctx.lineTo(q.x*W,q.y*H);ctx.stroke()}
  for(const n of nodes){ctx.globalAlpha=.9;ctx.fillStyle=n.loss?red:jade;ctx.beginPath();ctx.arc(n.x*W,n.y*H,n.r,0,7);ctx.fill();ctx.globalAlpha=.18;ctx.beginPath();ctx.arc(n.x*W,n.y*H,n.r*2.4,0,7);ctx.fill()}
  ctx.globalAlpha=1;if(!RM&&!document.hidden)requestAnimationFrame(draw)};
-size();addEventListener('resize',size);draw();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!RM)draw()});
-hero.insertAdjacentHTML('beforeend','<div class="netkey" aria-hidden="true"><span><i style="background:var(--jade)"></i>Profitable bank</span><span><i style="background:var(--red)"></i>Loss-making</span><span><i class="ln"></i>Shared owner</span></div>');
+cv.remove();
+
 
 /* ---------- ownership map (static force layout, SVG) ---------- */
 const sec=document.createElement('section');sec.id='owners';

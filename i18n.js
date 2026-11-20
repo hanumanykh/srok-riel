@@ -19,7 +19,7 @@ const KM={
 "The register":"បញ្ជី","Bank directory":"បញ្ជីធនាគារ","All types":"គ្រប់ប្រភេទ","Commercial":"ពាណិជ្ជ","Specialized":"ឯកទេស","All records":"កំណត់ត្រាទាំងអស់","With case files":"មានសំណុំរឿង","Ownership sourced":"មានប្រភពកម្មសិទ្ធិ","Licence withdrawn":"អាជ្ញាប័ណ្ណត្រូវបានដកហូត","Financial data":"ទិន្នន័យហិរញ្ញវត្ថុ",
 "All owner countries":"គ្រប់ប្រទេសម្ចាស់","All ownership":"គ្រប់ប្រភេទកម្មសិទ្ធិ","Majority Cambodian capital":"ដើមទុនកម្ពុជាភាគច្រើន","Majority foreign capital":"ដើមទុនបរទេសភាគច្រើន","No capital data":"គ្មានទិន្នន័យដើមទុន",
 "Name A–Z":"ឈ្មោះ ក–អ","Largest assets":"ទ្រព្យសកម្មធំបំផុត","Official actions first":"វិធានការផ្លូវការមុន","Highest NPL ratio":"អត្រា NPL ខ្ពស់បំផុត","Lowest NPL ratio":"អត្រា NPL ទាបបំផុត",
-"All":"ទាំងអស់","Table":"តារាង","Cards":"កាត","Show more":"បង្ហាញបន្ថែម","Show more case files":"បង្ហាញសំណុំរឿងបន្ថែម","View profile →":"មើលប្រវត្តិ →","Show less":"បង្ហាញតិច",
+"All":"ទាំងអស់","Table":"តារាង","Cards":"កាត","Show more":"បង្ហាញបន្ថែម","Show more case files":"បង្ហាញសំណុំរឿងបន្ថែម","Open profile":"បើកប្រវត្តិ","Show less":"បង្ហាញតិច",
 "Bank":"ធនាគារ","Type":"ប្រភេទ","Disclosed owner":"ម្ចាស់ដែលបានបង្ហាញ","Owner country":"ប្រទេសម្ចាស់","Foreign capital":"ដើមទុនបរទេស","Assets (KHR tn)":"ទ្រព្យសកម្ម (ពាន់ពាន់លានរៀល)","Net profit 2025 (KHR bn)":"ប្រាក់ចំណេញសុទ្ធ ២០២៥ (ពាន់លានរៀល)","NPL ratio":"អត្រា NPL","Record":"កំណត់ត្រា","Compare":"ប្រៀបធៀប",
 "No case indexed":"គ្មានសំណុំរឿង","Allegation or dispute (unproven)":"ការចោទប្រកាន់ ឬវិវាទ (មិនទាន់បញ្ជាក់)","Sanction on the bank":"ទណ្ឌកម្មលើធនាគារ","Regulatory action on the bank":"វិធានការបទប្បញ្ញត្តិលើធនាគារ","Parent, shareholder or historical record":"កំណត់ត្រាក្រុមមេ ម្ចាស់ភាគហ៊ុន ឬប្រវត្តិ",
 "Documented events":"ព្រឹត្តិការណ៍ដែលមានឯកសារ","Research notes":"កំណត់ចំណាំស្រាវជ្រាវ","How to read the ledger":"របៀបអានបញ្ជី","Financial security":"សន្តិសុខហិរញ្ញវត្ថុ","Integrity":"សុចរិតភាព","Coverage":"វិសាលភាព",
@@ -41,7 +41,7 @@ const f=document.createElement('link');f.rel='stylesheet';f.href='https://fonts.
 const tr=root=>{const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const t=n.nodeValue,k=t.trim();if(!k||n.parentElement&&/SCRIPT|STYLE/.test(n.parentElement.tagName))continue;if(KM[k]){n.nodeValue=t.replace(k,KM[k]);continue}let v=t;for(const[r,s]of SUB)v=v.replace(r,s);if(v!==t)n.nodeValue=v}
  (root.querySelectorAll?root:document).querySelectorAll('[placeholder]').forEach(e=>{if(PH[e.placeholder])e.placeholder=PH[e.placeholder]});
  (root.querySelectorAll?root:document).querySelectorAll('option').forEach(o=>{if(KM[o.text])o.text=KM[o.text]})};
-const h1=document.querySelector('h1');if(h1)h1.innerHTML='តើអ្នកណាជាម្ចាស់<br><em>ធនាគារនៅកម្ពុជា?</em>';
+const h1=document.querySelector('h1');if(h1)h1.textContent='តើអ្នកណាជាម្ចាស់ធនាគារនៅកម្ពុជា?';
 tr(document.body);
 let busy=false;new MutationObserver(ms=>{if(busy)return;busy=true;for(const m of ms)m.addedNodes.forEach(x=>{if(x.nodeType===1)tr(x);else if(x.nodeType===3&&x.parentElement)tr(x.parentElement)});busy=false}).observe(document.body,{childList:true,subtree:true});
 document.querySelector('main').insertAdjacentHTML('afterbegin','<p class="kmnote">ការបកប្រែនេះកំពុងរង់ចាំការពិនិត្យដោយអ្នកជំនាញ។ ឈ្មោះធនាគារ ទិន្នន័យ និងប្រភពនៅជាភាសាអង់គ្លេស។</p>');
