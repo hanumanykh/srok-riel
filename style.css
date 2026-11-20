@@ -101,3 +101,5 @@ footer{margin-top:80px;padding:34px 0;border-top:1px solid var(--line2)}footer .
  .mini{grid-template-columns:1fr 1fr}#tip{display:none}#cmdbtn{display:none}.seg{width:100%}.seg button{flex:1}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}h1 .w{opacity:1;transform:none}}
+.mini{background:none;gap:0}.mini div{box-shadow:0 0 0 .5px var(--line2)}
+@media(max-width:760px){#chDelta svg,#chProfit svg{min-width:860px}#chAssets svg,#chScatter svg{min-width:620px}.chart{-webkit-overflow-scrolling:touch}}
