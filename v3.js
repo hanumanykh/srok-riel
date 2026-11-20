@@ -8,7 +8,7 @@ const norm=s=>s.toLowerCase().replace(/\(.*?\)/g,'').replace(/\b(plc|co|ltd|limi
 const KW=/\b(bank|holdings?|group|plc|ltd|limited|capital|trust|association|government|investment|co|corporation|berhad|pcl|card)\.?$/i,CORP=/\b(bank|holding|group|plc|ltd|limited|capital|trust|association|government|investment|corporation|berhad|pcl|card|fund|financial|company)\b/i;
 const split=s=>s.replace(/\(.*?\)/g,'').replace(/,? directly and through .*/i,'').replace(/,? and (\w+ )?other (shareholders|individuals)/i,'').split(/\s·\s/).flatMap(part=>{if(!CORP.test(part))return part.split(/, | and /);const m=part.split(' and ');if(m.length===2&&KW.test(m[0].trim()))return m;return [part]}).map(x=>x.trim()).filter(x=>x.length>2&&!/^other/i.test(x));
 const OWN=new Map();
-banks.forEach((b,i)=>{if(!b.ownership)return;split(b.ownership.owner).forEach(o=>{const k=norm(o);if(!k)return;if(!OWN.has(k))OWN.set(k,{name:o,banks:new Set()});OWN.get(k).banks.add(i)})});
+Object.entries(GROUPS).forEach(([i,gs])=>gs.forEach(([g,c])=>{if(!OWN.has(g))OWN.set(g,{name:g,country:c,banks:new Set()});OWN.get(g).banks.add(+i)}));
 window.SR_OWNERS=OWN;
 const sharedOwners=[...OWN.values()].filter(o=>o.banks.size>1);
 
@@ -33,7 +33,7 @@ hero.insertAdjacentHTML('beforeend','<div class="netkey" aria-hidden="true"><spa
 
 /* ---------- ownership map (static force layout, SVG) ---------- */
 const sec=document.createElement('section');sec.id='owners';
-sec.innerHTML='<span class="eyebrow">Ownership network</span><h2>Who owns what</h2><p class="lead">Every bank linked to its disclosed owners. Gold lines mark owners that control more than one bank. Hover to trace a group, click a bank to open it.</p><div class="card glass mapcard"><div class="maptools"><input id="mapq" type="search" placeholder="Find an owner or bank…" aria-label="Find in ownership map"><span class="legend"><span><i style="background:var(--jade)"></i>Commercial bank</span><span><i style="background:var(--blue)"></i>Specialized bank</span><span><i style="background:var(--gold);border-radius:1px;transform:rotate(45deg)"></i>Owner</span></span></div><div id="omap" class="omap"></div><ul class="groups" id="groups"></ul></div>';
+sec.innerHTML='<span class="eyebrow">Ownership network</span><h2>Who owns what</h2><p class="lead">Every bank linked to its ultimate parent group. Gold lines mark groups that control more than one bank. Hover to trace a group, click a bank to open it.</p><div class="card glass mapcard"><div class="maptools"><input id="mapq" type="search" placeholder="Find an owner or bank…" aria-label="Find in ownership map"><span class="legend"><span><i style="background:var(--jade)"></i>Commercial bank</span><span><i style="background:var(--blue)"></i>Specialized bank</span><span><i style="background:var(--gold);border-radius:1px;transform:rotate(45deg)"></i>Owner</span></span></div><div id="omap" class="omap"></div><ul class="groups" id="groups"></ul></div>';
 el('directory').before(sec);
 const N=[],L=[];const bi=new Map();
 banks.forEach((b,i)=>{if(!b.ownership)return;bi.set(i,N.length);N.push({t:'b',i,label:short(b.display),r:5+11*Math.sqrt((b.assets||amax*.02)/amax)})});
@@ -46,20 +46,20 @@ for(let it=0;it<420;it++){const al=1-it/420;
 const lab=n=>n.t==='o'?(n.multi):(N.filter((m,j)=>L.some(([s,t])=>(s===j&&t===N.indexOf(n))||(t===j&&s===N.indexOf(n)))).some(m=>m.multi)||n.r>8.5);
 el('omap').innerHTML='<svg viewBox="0 0 '+MW+' '+MH+'" role="img" aria-label="Ownership network of Cambodian banks">'+
  L.map(([s,t,m],k)=>'<line data-l="'+s+'-'+t+'" x1="'+N[s].x.toFixed(1)+'" y1="'+N[s].y.toFixed(1)+'" x2="'+N[t].x.toFixed(1)+'" y2="'+N[t].y.toFixed(1)+'" class="'+(m?'lm':'ls')+'"/>').join('')+
- N.map((n,k)=>{const x=n.x.toFixed(1),y=n.y.toFixed(1);return '<g class="nd '+n.t+(n.multi?' multi':'')+'" data-n="'+k+'"'+(n.t==='b'?' data-bank="'+n.i+'"':'')+' data-tip="'+esc(n.t==='b'?banks[n.i].display+' · owner: '+(banks[n.i].ownership.owner):n.label+' · '+OWN.get(n.k).banks.size+' bank(s)')+'">'+(n.t==='b'?'<circle cx="'+x+'" cy="'+y+'" r="'+n.r.toFixed(1)+'" class="'+banks[n.i].type+'"/>':'<rect x="'+(n.x-n.r).toFixed(1)+'" y="'+(n.y-n.r).toFixed(1)+'" width="'+(n.r*2)+'" height="'+(n.r*2)+'" transform="rotate(45 '+x+' '+y+')"/>')+(lab(n)?'<text x="'+x+'" y="'+(n.y-n.r-5).toFixed(1)+'" text-anchor="middle">'+esc(n.label.length>26?n.label.slice(0,25)+'…':n.label)+'</text>':'')+'</g>'}).join('')+'</svg>';
+ N.map((n,k)=>{const x=n.x.toFixed(1),y=n.y.toFixed(1);return '<g class="nd '+n.t+(n.multi?' multi':'')+'" data-n="'+k+'"'+(n.t==='b'?' data-bank="'+n.i+'"':'')+' data-tip="'+esc(n.t==='b'?banks[n.i].display+' · owner: '+(banks[n.i].ownership.owner):n.label+' · '+OWN.get(n.k).country+' · '+OWN.get(n.k).banks.size+' bank(s)')+'">'+(n.t==='b'?'<circle cx="'+x+'" cy="'+y+'" r="'+n.r.toFixed(1)+'" class="'+banks[n.i].type+'"/>':'<rect x="'+(n.x-n.r).toFixed(1)+'" y="'+(n.y-n.r).toFixed(1)+'" width="'+(n.r*2)+'" height="'+(n.r*2)+'" transform="rotate(45 '+x+' '+y+')"/>')+(lab(n)?'<text x="'+x+'" y="'+(n.y-n.r-5).toFixed(1)+'" text-anchor="middle">'+esc(n.label.length>26?n.label.slice(0,25)+'…':n.label)+'</text>':'')+'</g>'}).join('')+'</svg>';
 const svgEl=el('omap').firstChild;
 const focus=k=>{svgEl.classList.toggle('dim',k!==null);svgEl.querySelectorAll('.hl').forEach(e=>e.classList.remove('hl'));if(k===null)return;const set=new Set([k]);L.forEach(([s,t])=>{if(s===k)set.add(t);if(t===k)set.add(s)});
  if(N[k].t==='b')[...set].forEach(j=>{if(N[j].t==='o')L.forEach(([s,t])=>{if(s===j)set.add(t)})});
  set.forEach(j=>svgEl.querySelector('[data-n="'+j+'"]').classList.add('hl'));L.forEach(([s,t])=>{if(set.has(s)&&set.has(t))svgEl.querySelector('[data-l="'+s+'-'+t+'"]').classList.add('hl')})};
 svgEl.addEventListener('pointerover',e=>{const g=e.target.closest('.nd');focus(g?+g.dataset.n:null)});svgEl.addEventListener('pointerleave',()=>focus(null));
 el('mapq').addEventListener('input',e=>{const q=e.target.value.toLowerCase().trim();if(!q)return focus(null);const k=N.findIndex(n=>n.label.toLowerCase().includes(q)||(n.t==='b'&&banks[n.i].display.toLowerCase().includes(q)));focus(k<0?null:k)});
-el('groups').innerHTML='<li class="gh">Owners with more than one bank</li>'+sharedOwners.sort((a,b)=>b.banks.size-a.banks.size).map(o=>'<li><b>'+esc(o.name)+'</b><span>'+[...o.banks].map(i=>'<button data-bank="'+i+'">'+esc(short(banks[i].display))+'</button>').join('')+'</span></li>').join('');
+el('groups').innerHTML='<li class="gh">Groups with more than one bank</li>'+sharedOwners.sort((a,b)=>b.banks.size-a.banks.size).map(o=>'<li><b>'+esc(o.name)+' <em class="cty">'+esc(o.country)+'</em></b><span>'+[...o.banks].map(i=>'<button data-bank="'+i+'">'+esc(short(banks[i].display))+'</button>').join('')+'</span></li>').join('');
 document.querySelector('.nav nav').insertAdjacentHTML('afterbegin','');
 const navD=document.querySelector('.nav nav a[href="#directory"]');if(navD)navD.insertAdjacentHTML('beforebegin','<a href="#owners">Owners</a>');
 
 /* ---------- full-page bank profile ---------- */
 const base=openBank;
-openBank=function(i){base(i);const b=banks[i],d=el('profile');d.classList.add('page');
+openBank=function(i){base(i);const b=banks[i],d=el('profile');d.classList.add('page');const h2=el('body').querySelector('h2');if(h2&&b.groups.length)h2.insertAdjacentHTML('afterend','<p class="grp">Parent group: '+b.groups.map(g=>'<b>'+esc(g[0])+'</b> <span>'+esc(g[1])+'</span>').join(' · ')+'</p>');
  const peers=banks.filter(x=>x!==b&&x.type===b.type&&!isNaN(x.assets)).sort((x,y)=>Math.abs(x.assets-b.assets)-Math.abs(y.assets-b.assets)).slice(0,4);
  const ev=b.events.slice().sort((x,y)=>y.date.localeCompare(x.date));
  const body=el('body');
@@ -83,3 +83,8 @@ el('trayGo').onclick=()=>{const L=[...CMP].map(i=>banks[i]);const row=(t,f)=>'<t
 const cnt=el('count');let last=0;new MutationObserver(()=>{const m=cnt.textContent.match(/^(\d+)/);if(!m||RM)return;const to=+m[1],from=last;last=to;if(from===to)return;const rest=cnt.textContent.slice(m[1].length);let t0;const st=t=>{t0??=t;const k=Math.min(1,(t-t0)/400);cnt.firstChild&&(cnt.firstChild.nodeValue=Math.round(from+(to-from)*k)+rest);if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st)}).observe(cnt,{childList:true});
 })();
 (()=>{const m=location.hash.match(/^#bank-(\d+)/);if(m&&banks[m[1]])openBank(+m[1])})();
+/* owner-country breakdown */
+(()=>{const C={};banks.forEach(b=>{const c=b.country;C[c]=C[c]||{n:0,a:0,list:[]};C[c].n++;C[c].a+=b.assets||0;C[c].list.push(b)});
+const tot=banks.reduce((s,b)=>s+(b.assets||0),0),rows=Object.entries(C).sort((x,y)=>y[1].a-x[1].a);
+document.querySelector('.mapcard').insertAdjacentHTML('beforeend','<div class="ctyb"><div class="gh">By country of the controlling group · share of sector assets</div>'+rows.map(([c,v])=>'<button class="crow" data-c="'+esc(c)+'"><span class="cn">'+esc(c)+'</span><span class="cbar"><i style="width:'+(v.a/tot*100).toFixed(1)+'%"></i></span><span class="cv">'+fr(v.a/tot*100,1)+'%</span><span class="cc">'+v.n+' bank'+(v.n>1?'s':'')+'</span></button>').join('')+'<p class="note">Country = headquarters of the controlling parent group, from bank and parent disclosures. Banks held by individuals are grouped as “Individuals”: their nationality is not assigned.</p></div>');
+document.querySelector('.ctyb').addEventListener('click',e=>{const r=e.target.closest('[data-c]');if(!r)return;el('ctry').value=r.dataset.c;el('ctry').dispatchEvent(new Event('input'));el('directory').scrollIntoView({behavior:'smooth'})});})();
