@@ -88,3 +88,44 @@ const cnt=el('count');let last=0;new MutationObserver(()=>{const m=cnt.textConte
 const tot=banks.reduce((s,b)=>s+(b.assets||0),0),rows=Object.entries(C).sort((x,y)=>y[1].a-x[1].a);
 document.querySelector('.mapcard').insertAdjacentHTML('beforeend','<div class="ctyb"><div class="gh">By country of the controlling group · share of sector assets</div>'+rows.map(([c,v])=>'<button class="crow" data-c="'+esc(c)+'"><span class="cn">'+esc(c)+'</span><span class="cbar"><i style="width:'+(v.a/tot*100).toFixed(1)+'%"></i></span><span class="cv">'+fr(v.a/tot*100,1)+'%</span><span class="cc">'+v.n+' bank'+(v.n>1?'s':'')+'</span></button>').join('')+'<p class="note">Country = headquarters of the controlling parent group, from bank and parent disclosures. Banks held by individuals are grouped as “Individuals”: their nationality is not assigned.</p></div>');
 document.querySelector('.ctyb').addEventListener('click',e=>{const r=e.target.closest('[data-c]');if(!r)return;el('ctry').value=r.dataset.c;el('ctry').dispatchEvent(new Event('input'));el('directory').scrollIntoView({behavior:'smooth'})});})();
+/* readable map: banks clustered by owner country (replaces force graph) */
+(()=>{const box=el('omap');const draw=()=>{
+ const wide=box.clientWidth||1100,cols=wide<700?2:4,CW=280,CH=280,amax=Math.max(...banks.map(b=>b.assets||0));
+ const C={};banks.forEach((b,i)=>{(C[b.country]=C[b.country]||[]).push(i)});
+ const tot=banks.reduce((s,b)=>s+(b.assets||0),0);
+ const ctry=Object.entries(C).sort((x,y)=>y[1].reduce((s,i)=>s+(banks[i].assets||0),0)-x[1].reduce((s,i)=>s+(banks[i].assets||0),0));
+ const P={};let svg='';
+ ctry.forEach(([c,list],k)=>{const cx=(k%cols)*CW,cy=Math.floor(k/cols)*CH,share=list.reduce((s,i)=>s+(banks[i].assets||0),0)/tot*100;
+  svg+='<g class="cl"><rect x="'+(cx+6)+'" y="'+(cy+6)+'" width="'+(CW-12)+'" height="'+(CH-12)+'" rx="10"/><text class="ch" x="'+(cx+20)+'" y="'+(cy+30)+'">'+esc(c)+'</text><text class="cs" x="'+(cx+CW-20)+'" y="'+(cy+30)+'" text-anchor="end">'+fr(share,1)+'% · '+list.length+'</text></g>';
+  const placed=[],ox=cx+CW/2,oy=cy+CH/2+14;
+  list.map(i=>({i,r:5+20*Math.sqrt((banks[i].assets||amax*.01)/amax)})).sort((a,b)=>b.r-a.r).forEach(n=>{
+   for(let t=0;t<900;t+=1){const a=t*.35,d=t*.55,x=ox+Math.cos(a)*d,y=oy+Math.sin(a)*d*.8;
+    if(x-n.r<cx+14||x+n.r>cx+CW-14||y-n.r<cy+44||y+n.r>cy+CH-22)continue;
+    if(placed.every(p=>Math.hypot(p.x-x,p.y-y*1)>p.r+n.r+(p.r>11||n.r>11?26:6))){n.x=x;n.y=y;placed.push(n);P[n.i]=n;break}}});
+ });
+ // gold links for multi-bank groups
+ let links='';[...SR_OWNERS.values()].filter(o=>o.banks.size>1).forEach(o=>{const a=[...o.banks].filter(i=>P[i]);for(let k=1;k<a.length;k++){const p=P[a[0]],q=P[a[k]];links+='<path class="gl" data-g="'+esc(o.name)+'" d="M'+p.x.toFixed(1)+' '+p.y.toFixed(1)+' Q'+((p.x+q.x)/2).toFixed(1)+' '+(Math.min(p.y,q.y)-40).toFixed(1)+' '+q.x.toFixed(1)+' '+q.y.toFixed(1)+'"/>'}});
+ const nodes=Object.values(P).map(n=>{const b=banks[n.i],g=b.groups.map(x=>x[0]).join('|');return '<g class="bn" data-bank="'+n.i+'" data-gs="'+esc(g)+'" data-tip="'+esc(b.display+' · '+(b.groups[0]?b.groups.map(x=>x[0]).join(' + '):'owner not disclosed')+' · '+fr((b.assets||0)/1e6,1)+' tn KHR')+'"><circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+n.r.toFixed(1)+'" class="'+(b.profit<0?'ls':'pr')+'"/>'+(n.r>12.5?'<text x="'+n.x.toFixed(1)+'" y="'+(n.y+n.r+13).toFixed(1)+'" text-anchor="middle">'+esc(short(b.display).replace(/ Bank$/,''))+'</text>':'')+'</g>'}).join('');
+ const rows=Math.ceil(ctry.length/cols);
+ box.innerHTML='<svg viewBox="0 0 '+(cols*CW)+' '+(rows*CH)+'" class="cmap" role="img" aria-label="Banks grouped by country of controlling owner">'+svg+links+nodes+'</svg>';
+ const s=box.firstChild;s.addEventListener('pointerover',e=>{const g=e.target.closest('.bn');s.classList.toggle('dim',!!g);s.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));if(!g)return;const gs=g.dataset.gs.split('|').filter(Boolean);g.classList.add('hl');s.querySelectorAll('.bn').forEach(o=>{if(o.dataset.gs.split('|').some(x=>gs.includes(x)))o.classList.add('hl')});s.querySelectorAll('.gl').forEach(l=>{if(gs.includes(l.dataset.g))l.classList.add('hl')})});
+ s.addEventListener('pointerleave',()=>{s.classList.remove('dim');s.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'))});};
+ draw();let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(draw,200)});
+ el('mapq').oninput=e=>{const q=e.target.value.toLowerCase().trim(),s=box.firstChild;s.classList.toggle('dim',!!q);s.querySelectorAll('.bn').forEach(g=>{const b=banks[g.dataset.bank];g.classList.toggle('hl',!!q&&(b.display+' '+g.dataset.gs).toLowerCase().includes(q))})};
+ document.querySelector('.maptools .legend').innerHTML='<span><i style="background:var(--jade);border-radius:50%"></i>Profitable bank</span><span><i style="background:var(--red);border-radius:50%"></i>Loss-making</span><span>Size = total assets</span><span><i style="background:var(--gold);height:2px;width:14px;vertical-align:3px"></i>Same parent group</span>';
+ document.querySelector('#owners .lead').textContent='Each bubble is a bank, sized by assets and placed in the country of its controlling group. Gold arcs join banks owned by the same group. Hover a bank to see its group; click to open it.';
+})();
+/* final: country cards with named bank rows (most legible) */
+(()=>{const box=el('omap'),tot=banks.reduce((s,b)=>s+(b.assets||0),0),amax=Math.max(...banks.map(b=>b.assets||0));
+const multi=new Set([...SR_OWNERS.values()].filter(o=>o.banks.size>1).map(o=>o.name));
+const C={};banks.forEach((b,i)=>{(C[b.country]=C[b.country]||[]).push(i)});
+const ctry=Object.entries(C).map(([c,l])=>[c,l.sort((x,y)=>(banks[y].assets||0)-(banks[x].assets||0)),l.reduce((s,i)=>s+(banks[i].assets||0),0)]).sort((x,y)=>y[2]-x[2]);
+box.className='ccards';
+box.innerHTML=ctry.map(([c,l,a])=>'<div class="cc"><div class="cch"><b>'+esc(c)+'</b><span>'+fr(a/tot*100,1)+'% of assets · '+l.length+' bank'+(l.length>1?'s':'')+'</span></div><div class="cbar"><i style="width:'+(a/tot*100).toFixed(1)+'%"></i></div><ul>'+l.map(i=>{const b=banks[i],gs=b.groups.map(g=>g[0]),sh=gs.filter(g=>multi.has(g));return '<li data-bank="'+i+'" data-gs="'+esc(gs.join('|'))+'"><i class="dot '+(b.profit<0?'ls':'pr')+'" style="--s:'+(6+10*Math.sqrt((b.assets||0)/amax)).toFixed(1)+'px"></i><span class="bnm">'+esc(short(b.display))+(sh.length?' <em class="gb">'+esc(sh[0])+'</em>':'')+((r=>r.length?'<small>'+esc(r.join(' + '))+'</small>':'')(gs.length?gs.filter(g=>g!==sh[0]):['Owner not disclosed']))+'</span><span class="ba">'+(isNaN(b.assets)?'—':fr(b.assets/1e6,1)+' tn')+'</span></li>'}).join('')+'</ul></div>').join('');
+const hi=gs=>{box.classList.toggle('dim',!!gs);box.querySelectorAll('li').forEach(li=>li.classList.toggle('hl',!!gs&&li.dataset.gs.split('|').some(g=>gs.includes(g))))};
+box.addEventListener('pointerover',e=>{const li=e.target.closest('li');if(!li)return hi(null);const gs=li.dataset.gs.split('|').filter(g=>multi.has(g));hi(gs.length?gs:null)});box.addEventListener('pointerleave',()=>hi(null));
+el('mapq').oninput=e=>{const q=e.target.value.toLowerCase().trim();box.classList.toggle('dim',!!q);box.querySelectorAll('li').forEach(li=>li.classList.toggle('hl',!!q&&li.textContent.toLowerCase().includes(q)))};
+document.querySelector('.maptools .legend').innerHTML='<span><i style="background:var(--jade);border-radius:50%"></i>Profitable</span><span><i style="background:var(--red);border-radius:50%"></i>Loss-making</span><span>Dot size = assets</span><span><em class="gb" style="margin:0">Group</em> owns several banks</span>';
+document.querySelector('#owners .lead').textContent='Banks grouped by the country of their controlling parent group, largest first. A gold badge marks groups that own more than one bank: hover it to light up the sister banks. Click any bank to open it.';
+const old=document.querySelector('.ctyb');if(old)old.remove();
+})();
